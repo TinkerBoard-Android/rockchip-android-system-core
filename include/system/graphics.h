@@ -60,6 +60,28 @@ typedef enum android_pixel_format {
     HAL_PIXEL_FORMAT_BGRA_8888          = 5,
 
     /*
+     * sRGB color pixel formats:
+     *
+     * The red, green and blue components are stored in sRGB space, and converted
+     * to linear space when read, using the standard sRGB to linear equation:
+     *
+     * Clinear = Csrgb / 12.92                  for Csrgb <= 0.04045
+     *         = (Csrgb + 0.055 / 1.055)^2.4    for Csrgb >  0.04045
+     *
+     * When written the inverse transformation is performed:
+     *
+     * Csrgb = 12.92 * Clinear                  for Clinear <= 0.0031308
+     *       = 1.055 * Clinear^(1/2.4) - 0.055  for Clinear >  0.0031308
+     *
+     *
+     *  The alpha component, if present, is always stored in linear space and
+     *  is left unmodified when read or written.
+     *
+     */
+    HAL_PIXEL_FORMAT_sRGB_A_8888        = 0xC,
+    HAL_PIXEL_FORMAT_sRGB_X_8888        = 0xD,
+
+    /*
      * 0x100 - 0x1FF
      *
      * This range is reserved for pixel formats that are specific to the HAL
@@ -190,6 +212,7 @@ typedef enum android_pixel_format {
      * extra metadata to define.
      */
     HAL_PIXEL_FORMAT_RAW16 = 0x20,
+    HAL_PIXEL_FORMAT_RAW_SENSOR = 0x20, // TODO(rubenbrunk): Remove RAW_SENSOR.
 
     /*
      * Android RAW10 format:
@@ -441,6 +464,11 @@ typedef enum android_pixel_format {
     HAL_PIXEL_FORMAT_YCbCr_422_SP       = 0x10, // NV16
     HAL_PIXEL_FORMAT_YCrCb_420_SP       = 0x11, // NV21
     HAL_PIXEL_FORMAT_YCbCr_422_I        = 0x14, // YUY2
+    HAL_PIXEL_FORMAT_YCrCb_NV12         = 0x15, // YUY2
+    HAL_PIXEL_FORMAT_YCrCb_NV12_VIDEO   = 0x16,
+    HAL_PIXEL_FORMAT_YCrCb_NV12_10      = 0x17, // YUY2_1obit
+    HAL_PIXEL_FORMAT_YCbCr_422_SP_10    = 0x18, // 
+    HAL_PIXEL_FORMAT_YCrCb_420_SP_10    = 0x19, //
 } android_pixel_format_t;
 
 /*
