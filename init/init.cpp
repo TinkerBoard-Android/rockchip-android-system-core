@@ -73,6 +73,8 @@ struct selabel_handle *sehandle_prop;
 
 static int property_triggers_enabled = 0;
 
+static char bootmode[32] = "unknow";
+static char hardware[32] = "rk30board";
 static char qemu[32];
 
 int have_console;
@@ -417,7 +419,24 @@ static void export_oem_lock_status() {
     }
 }
 
+static void symlink_fstab() {
+    char fstab_path[255] = "/fstab.";
+    char fstab_default_path[50] = "/fstab.";
+    int ret = -1;
+
+    //such as: fstab.rk30board.bootmode.unknown
+    strcat(fstab_path, hardware);
+    strcat(fstab_path, ".bootmode.");
+    strcat(fstab_path, bootmode);
+    strcat(fstab_default_path, hardware);
+    ret = symlink(fstab_path, fstab_default_path);
+    if (ret < 0) {
+        ERROR("%s : failed", __func__);
+    }
+}
+
 static void export_kernel_boot_props() {
+
     struct {
         const char *src_prop;
         const char *dst_prop;
@@ -434,6 +453,20 @@ static void export_kernel_boot_props() {
         std::string value = property_get(prop_map[i].src_prop);
         property_set(prop_map[i].dst_prop, (!value.empty()) ? value.c_str() : prop_map[i].default_value);
     }
+
+    /* save a copy for init's usage during boot */
+    std::string bootmode_value = property_get("ro.bootmode");
+    if (!bootmode_value.empty())
+        strlcpy(bootmode, bootmode_value.c_str(), sizeof(bootmode));
+
+    /* if this was given on kernel command line, override what we read
+     * before (e.g. from /proc/cpuinfo), if anything */
+    std::string hardware_value = property_get("ro.boot.hardware");
+    if (!hardware_value.empty())
+        strlcpy(hardware, hardware_value.c_str(), sizeof(hardware));
+    property_set("ro.hardware", hardware);
+
+    symlink_fstab();
 }
 
 static void process_kernel_dt() {
