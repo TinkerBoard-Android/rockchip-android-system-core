@@ -419,6 +419,8 @@ static int was_verity_restart()
     static const char *files[] = {
         "/sys/fs/pstore/console-ramoops",
         "/proc/last_kmsg",
+        "/sys/fs/pstore/console-ramoops-0",
+        "/sys/fs/pstore/pmsg-ramoops-0",
         NULL
     };
     int i;
@@ -727,7 +729,8 @@ static int load_verity_state(struct fstab_rec *fstab, int *mode)
 
     if (was_verity_restart()) {
         /* device was restarted after dm-verity detected a corrupted
-         * block, so use EIO mode */
+         * block, so use LOGGING mode */
+        *mode = VERITY_MODE_LOGGING;
         return write_verity_state(fstab->verity_loc, offset, *mode);
     }
 
