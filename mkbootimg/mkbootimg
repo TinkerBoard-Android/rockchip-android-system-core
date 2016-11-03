@@ -69,8 +69,10 @@ def write_header(args):
     update_sha(sha, args.second)
     sha.update(pack('I', args.tags_offset+args.base))
     sha.update(pack('I', args.pagesize))
-    for i in range(0, 134):
-        sha.update(pack('I', 0))
+    sha.update(pack('I', 0))
+    sha.update(pack('I', (args.os_version << 11) | args.os_patch_level))
+    sha.update(pack('16s', args.board.encode()))
+    sha.update(pack('512s', args.cmdline[:512].encode()))
 
     img_id = pack('32s', sha.digest())
 
