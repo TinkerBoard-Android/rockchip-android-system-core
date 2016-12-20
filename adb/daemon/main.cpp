@@ -224,6 +224,30 @@ int adbd_main(int server_port) {
     return 0;
 }
 
+// usb adb will use ro.serialno write into /config/usb_gadget/g1/strings/0x409/serialnumber for adb connect.
+// ro.serialno is generate by drmservie which is started later than adbd service, so adb usb driver can't get serialno in time. 
+// must wait for ro.serialno ready, then start adbd.
+static int wait_for_serialno_ready(void) {
+    char value[PROPERTY_VALUE_MAX];
+    int count = 50;
+
+    //KLOG_ERROR("adb_main", "wait_for_serialno_ready\n");
+    while (1) {
+        property_get("ro.serialno", value, "none");
+        if (strcmp(value, "none") == 0) {
+            usleep(200000);
+            //KLOG_ERROR("adb_main", "ro.serialno not ready\n");
+            if (count-- <= 0)
+                break;
+            continue;
+        }
+        //KLOG_ERROR("adb_main", "ro.serialno ready\n");
+        break;
+    }
+    //KLOG_ERROR("adb_main", "wait_for_serialno_ready return count = %d\n", count);
+    return 0;
+}
+
 int main(int argc, char** argv) {
     while (true) {
         static struct option opts[] = {
@@ -259,7 +283,7 @@ int main(int argc, char** argv) {
     close_stdin();
 
     adb_trace_init(argv);
-
+    wait_for_serialno_ready();
     D("Handling main()");
     return adbd_main(DEFAULT_ADB_PORT);
 }
