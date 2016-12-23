@@ -11,6 +11,12 @@ LOCAL_EXPORT_C_INCLUDE_DIRS := $(LOCAL_PATH)/include
 include $(BUILD_STATIC_LIBRARY)
 
 include $(CLEAR_VARS)
+
+ifeq ($(strip $(BOARD_LEDS_CONTROL)),true)
+LOCAL_CFLAGS += -DLEDS_CONTROL
+endif
+
+
 LOCAL_SRC_FILES := BatteryMonitor.cpp
 LOCAL_MODULE := libbatterymonitor
 LOCAL_C_INCLUDES := $(LOCAL_PATH)/include

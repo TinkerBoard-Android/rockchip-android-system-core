@@ -77,6 +77,29 @@ static void initBatteryProperties(BatteryProperties* props) {
     props->batteryTechnology.clear();
 }
 
+#ifdef LEDS_CONTROL
+static void sysfs_write(const char *path,const char *s)
+{
+    char buf[80];
+    int len;
+    int fd = open(path, O_WRONLY);
+
+    if (fd < 0) {
+        strerror_r(errno, buf, sizeof(buf));
+        KLOG_WARNING(LOG_TAG,"Error opening %s: %s\n", path, buf);
+        return;
+    }
+
+    len = write(fd, s, strlen(s));
+    if (len < 0) {
+        strerror_r(errno, buf, sizeof(buf));
+        KLOG_WARNING(LOG_TAG,"Error writing to %s: %s\n", path, buf);
+    }
+
+    close(fd);
+}
+#endif
+
 BatteryMonitor::BatteryMonitor() : mHealthdConfig(nullptr), mBatteryDevicePresent(false),
     mAlwaysPluggedDevice(false), mBatteryFixedCapacity(0), mBatteryFixedTemperature(0) {
     initBatteryProperties(&props);
@@ -356,6 +379,26 @@ bool BatteryMonitor::update(void) {
     }
 
     healthd_mode_ops->battery_update(&props);
+#ifdef LEDS_CONTROL
+    if(props.chargerAcOnline
+       | props.chargerUsbOnline
+       | props.chargerWirelessOnline){
+       if(props.batteryStatus == BATTERY_STATUS_FULL){
+           sysfs_write("sys/class/leds/battery_led_white/brightness","1");
+           sysfs_write("sys/class/leds/battery_led_amber/brightness","0");
+
+       }else {
+           sysfs_write("sys/class/leds/battery_led_white/brightness","1");
+           sysfs_write("sys/class/leds/battery_led_amber/brightness","1");
+
+
+       }
+
+    }else{
+       sysfs_write("sys/class/leds/battery_led_white/brightness","0");
+       sysfs_write("sys/class/leds/battery_led_amber/brightness","0");
+    }
+#endif
     return props.chargerAcOnline | props.chargerUsbOnline |
             props.chargerWirelessOnline;
 }
