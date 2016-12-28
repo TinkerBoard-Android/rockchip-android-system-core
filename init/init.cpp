@@ -87,6 +87,25 @@ bool waiting_for_exec = false;
 
 static int epoll_fd = -1;
 
+static int
+unix_read(int  fd, void*  buff, int  len) {
+    int  ret;
+    do { ret = read(fd, buff, len); } while (ret < 0 && errno == EINTR);
+        return ret;
+}
+        
+static int
+proc_read(const char*  filename, char* buff, size_t  buffsize) {
+    int  len = 0;
+    int  fd  = open(filename, O_RDONLY);
+    if (fd >= 0) {
+        len = unix_read(fd, buff, buffsize-1);
+        close(fd);
+    }
+    buff[len > 0 ? len : 0] = 0;
+    return len;
+}
+
 void register_epoll_handler(int fd, void (*fn)()) {
     epoll_event ev;
     ev.events = EPOLLIN;
@@ -436,6 +455,9 @@ static void symlink_fstab() {
 }
 
 static void export_kernel_boot_props() {
+    char cmdline[1024];
+    char* s1;
+    char* s2;
 
     struct {
         const char *src_prop;
@@ -449,6 +471,28 @@ static void export_kernel_boot_props() {
         { "ro.boot.hardware",   "ro.hardware",   "unknown", },
         { "ro.boot.revision",   "ro.revision",   "0", },
     };
+
+    //if storagemedia is emmc, so we will wait emmc init finish
+    for (int i = 0; i < EMMC_RETRY_COUNT; i++) {
+        proc_read( "/proc/cmdline", cmdline, sizeof(cmdline) );
+        s1 = strstr(cmdline, STORAGE_MEDIA);
+        s2 = strstr(cmdline, "androidboot.mode=emmc");
+
+        if(s1 == NULL){
+            //storagemedia is unknow
+            break;
+        }
+
+        if ((s1 > 0) && (s2 > 0)) {
+            ERROR("OK,EMMC DRIVERS INIT OK\n");
+            property_set("ro.boot.mode", "emmc");
+            break;
+        } else {
+            ERROR("OK,EMMC DRIVERS NOT READY, RERRY=%d\n", i);
+            usleep(10000);
+        }
+    }
+
     for (size_t i = 0; i < ARRAY_SIZE(prop_map); i++) {
         std::string value = property_get(prop_map[i].src_prop);
         property_set(prop_map[i].dst_prop, (!value.empty()) ? value.c_str() : prop_map[i].default_value);
