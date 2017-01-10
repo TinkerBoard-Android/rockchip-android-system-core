@@ -267,12 +267,12 @@ on late-init
     # /system and /vendor must be mounted by the end of the fs stage,
     # while /data is optional.
     trigger fs
-    trigger post-fs
 
     # Load properties from /system/ + /factory after fs mount. Place
     # this in another action so that the load will be scheduled after the prior
     # issued fs triggers have completed.
     trigger load_system_props_action
+    trigger post-fs
 
     # Mount fstab in init.{$device}.rc by mount_all with '--late' parameter
     # to only mount entries with 'latemount'. This is needed if '--early' is
@@ -296,7 +296,10 @@ on late-init
 
 
 on post-fs
-    start logd
+    # start logd
+    # set RLIMIT_NICE to allow priorities from 19 to -20
+    setrlimit 13 40 40
+    class_start core
     # once everything is setup, no need to modify /
     mount rootfs rootfs / ro remount
     # Mount shared so changes propagate into child namespaces
@@ -581,8 +584,6 @@ on boot
 
     # Define default initial receive window size in segments.
     setprop net.tcp.default_init_rwnd 60
-
-    class_start core
 
 on nonencrypted
     # A/B update verifier that marks a successful boot.
