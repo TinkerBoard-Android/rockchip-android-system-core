@@ -101,6 +101,9 @@ static void check_fs(char *blk_device, char *fs_type, char *target)
     char tmpmnt_opts[64] = "errors=remount-ro";
     char *e2fsck_argv[] = {
         E2FSCK_BIN,
+    #ifndef TARGET_BOARD_PLATFORM_PRODUCT_BOX
+        "-f",
+    #endif
         "-y",
         blk_device
     };
