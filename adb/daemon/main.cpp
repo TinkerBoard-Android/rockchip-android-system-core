@@ -143,7 +143,7 @@ static void drop_privileges(int server_port) {
         // minijail_enter() will abort if any priv-dropping step fails.
         minijail_enter(jail.get());
 
-        if (root_seclabel != nullptr) {
+        if ((root_seclabel != nullptr) && (is_selinux_enabled() > 0)) {
             if (selinux_android_setcon(root_seclabel) < 0) {
                 LOG(FATAL) << "Could not set SELinux context";
             }

@@ -242,12 +242,14 @@ static void make_device(const char *path,
 
     mode = get_device_perm(path, links, &uid, &gid) | (block ? S_IFBLK : S_IFCHR);
 
-    if (selabel_lookup_best_match(sehandle, &secontext, path, links, mode)) {
-        ERROR("Device '%s' not created; cannot find SELinux label (%s)\n",
-                path, strerror(errno));
-        return;
+    if (sehandle) {
+        if (selabel_lookup_best_match(sehandle, &secontext, path, links, mode)) {
+            ERROR("Device '%s' not created; cannot find SELinux label (%s)\n",
+                    path, strerror(errno));
+            return;
+        }
+        setfscreatecon(secontext);
     }
-    setfscreatecon(secontext);
 
     dev = makedev(major, minor);
     /* Temporarily change egid to avoid race condition setting the gid of the
@@ -907,7 +909,7 @@ void handle_device_fd()
         struct uevent uevent;
         parse_event(msg, &uevent);
 
-        if (selinux_status_updated() > 0) {
+        if (sehandle && selinux_status_updated() > 0) {
             struct selabel_handle *sehandle2;
             sehandle2 = selinux_android_file_context_handle();
             if (sehandle2) {
@@ -974,8 +976,11 @@ static void coldboot(const char *path)
 }
 
 void device_init() {
-    sehandle = selinux_android_file_context_handle();
-    selinux_status_open(true);
+    sehandle = NULL;
+    if (is_selinux_enabled() > 0) {
+        sehandle = selinux_android_file_context_handle();
+        selinux_status_open(true);
+    }
 
     /* is 256K enough? udev uses 16MB! */
     device_fd = uevent_open_socket(256*1024, true);
