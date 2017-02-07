@@ -327,7 +327,9 @@ static bool __attribute__((unused)) set_mmap_rnd_bits_min(int start, int min, bo
 static int set_mmap_rnd_bits_action(const std::vector<std::string>& args)
 {
     int ret = -1;
-
+#if defined(TARGET_BOARD_PLATFORM_PRODUCT_BOX)
+	return 0;
+#endif
     /* values are arch-dependent */
 #if defined(__aarch64__)
     /* arm64 supports 18 - 33 bits depending on pagesize and VA_SIZE */
