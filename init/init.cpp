@@ -544,6 +544,35 @@ static void process_kernel_dt() {
     }
 }
 
+static void set_soc_if_need() {
+    std::string soc_value = property_get("ro.rk.soc");
+    if (soc_value.empty()){
+	char *s1,*s2;
+	char cpuinfo[4096];
+	char soc[20];
+	int cpuinfo_len = 0;
+	proc_read( "/proc/cpuinfo", cpuinfo, sizeof(cpuinfo) );
+        cpuinfo_len = strlen(cpuinfo);	
+	for(int i=0;i<cpuinfo_len;i++){//all to lowercase
+		cpuinfo[i] = tolower(cpuinfo[i]);
+	}
+	s1 = strstr(cpuinfo, "rockchip");
+	if(s1 == NULL)
+		return;
+	s2 = strstr(s1, "revision");
+	if((strlen(s1)>15)&& s2!=NULL){
+		int soc_len = strlen(s1) - strlen(s2) - 9 -1;
+		strncpy(soc,s1+9,soc_len);
+		soc[soc_len]='\0';
+		ERROR("-----set_soc_if_need,get soc=%s,len = %d\n",soc,soc_len);
+		if(strncmp(soc,"rk",2)==0){
+			ERROR("---ready to set ro.rk.soc to %s\n",soc);	
+			property_set("ro.rk.soc",soc);
+		}
+	}
+    }
+}
+
 static void process_kernel_cmdline() {
     // Don't expose the raw commandline to unprivileged processes.
     chmod("/proc/cmdline", 0440);
@@ -713,6 +742,8 @@ int main(int argc, char** argv) {
         // Propagate the kernel variables to internal variables
         // used by init as well as the current required properties.
         export_kernel_boot_props();
+	//add by xzj to set ro.rk.soc read from /proc/cpuinfo if not set
+	set_soc_if_need();
     }
 
     // Set up SELinux, including loading the SELinux policy if we're in the kernel domain.
