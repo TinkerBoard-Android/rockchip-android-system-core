@@ -458,6 +458,8 @@ static void export_kernel_boot_props() {
     char cmdline[1024];
     char* s1;
     char* s2;
+    char* s3;
+    char* s4;
 
     struct {
         const char *src_prop;
@@ -477,8 +479,10 @@ static void export_kernel_boot_props() {
         proc_read( "/proc/cmdline", cmdline, sizeof(cmdline) );
         s1 = strstr(cmdline, STORAGE_MEDIA);
         s2 = strstr(cmdline, "androidboot.mode=emmc");
+	s3 = strstr(cmdline, "storagemedia=nvme");
+	s4 = strstr(cmdline, "androidboot.mode=nvme");
 
-        if(s1 == NULL){
+        if ((s1 == NULL) && (s3 == NULL)) {
             //storagemedia is unknow
             break;
         }
@@ -487,7 +491,11 @@ static void export_kernel_boot_props() {
             ERROR("OK,EMMC DRIVERS INIT OK\n");
             property_set("ro.boot.mode", "emmc");
             break;
-        } else {
+        } else if ((s3 > 0) && (s4 > 0)) {
+	    ERROR("OK,NVME DRIVERS INIT OK\n");
+	    property_set("ro.boot.mode", "nvme");
+	    break;
+	} else {
             ERROR("OK,EMMC DRIVERS NOT READY, RERRY=%d\n", i);
             usleep(10000);
         }
