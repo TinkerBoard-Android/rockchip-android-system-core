@@ -133,6 +133,17 @@ bool Service::Reap() {
                 ERROR("critical process '%s' exited %d times in %d minutes; "
                       "rebooting into recovery mode\n", name_.c_str(),
                       CRITICAL_CRASH_THRESHOLD, CRITICAL_CRASH_WINDOW / 60);
+#if defined(TARGET_BOARD_PLATFORM_PRODUCT_BOX)
+                FILE *fd = fopen("/cache/recovery/command", "wb+");
+                if(NULL == fd){
+                    NOTICE("*******/cache/recovery/command can't open*******\n");
+                }
+                char buffer[100] = "--wipe_data\n";
+                fwrite(buffer, 1, strlen("--wipe_data"), fd);
+                fclose(fd);
+                fd = NULL;
+                sync()
+#endif
                 android_reboot(ANDROID_RB_RESTART2, 0, "recovery");
                 return false;
             }

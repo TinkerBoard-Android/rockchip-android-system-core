@@ -18,6 +18,10 @@ init_cflags += \
     -Wno-unused-parameter \
     -Werror \
 
+ifeq ($(strip $(TARGET_BOARD_PLATFORM_PRODUCT)), box)
+    LOCAL_CFLAGS += -DTARGET_BOARD_PLATFORM_PRODUCT_BOX
+endif
+
 # --
 
 # If building on Linux, then build unit test for the host.
