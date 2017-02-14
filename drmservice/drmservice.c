@@ -922,6 +922,30 @@ bool detect_keybox()
 	return true;
 }
 
+void detect_secure_boot()
+{
+	int fd;
+	char buf[2048];
+	fd = open("/proc/cmdline", O_RDONLY);
+	if (fd < 0)
+	{
+		if(DEBUG_LOG)
+			SLOGE("------detect_secure_boot() open /proc/cmdline failed!\n");
+		return;
+	}
+	read(fd, buf, sizeof(buf) - 1);	
+	if(strstr(buf,"SecureBootCheckOk=1")!=NULL){
+		if(DEBUG_LOG)
+			SLOGE("------detect SecureBoot-----");
+		property_set("ro.secureboot","true");
+	}else{
+		if(DEBUG_LOG)
+			SLOGE("------detect not SecureBoot---");
+		property_set("ro.secureboot","false");
+	}
+	close(fd);
+}
+
 void change_path(const char *path)
 {
 	SLOGE("Leave %s Successed . . .\n",getcwd(NULL,0));
@@ -1078,7 +1102,7 @@ int main( int argc, char *argv[] )
        		 write_serialno2kernel(sn_buf_auto);
 		SLOGE("auto generate serialno,serialno = %s",sn_buf_auto);
 	}
-	bool keybox=detect_keybox();
+	/*bool keybox=detect_keybox();
 	if(keybox==true)
 	{    
 		property_set("drm.service.enabled","true");
@@ -1088,7 +1112,8 @@ int main( int argc, char *argv[] )
 	{
 		property_set("drm.service.enabled","false");
 		SLOGE("detect keybox disabled");
-	}
+	}*/
+	detect_secure_boot();
 	if ((*propbuf_source != '\0')&&( *propbuf_dest != '\0')) {
 		SLOGE("---do bootup copy from %s to %s",propbuf_source,propbuf_dest);
 		copy_dir(propbuf_source,propbuf_dest);
