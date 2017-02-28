@@ -6,6 +6,10 @@ include $(CLEAR_VARS)
 #
 
 include $(CLEAR_VARS)
+LOCAL_C_INCLUDES += $(LOCAL_EXPORT_C_INCLUDE_DIRS) \
+                    $(LOCAL_PATH)/include \
+		    external/safe-iop/include
+
 PIXELFLINGER_SRC_FILES:= \
 	codeflinger/ARMAssemblerInterface.cpp \
 	codeflinger/ARMAssemblerProxy.cpp \
@@ -71,6 +75,7 @@ LOCAL_SRC_FILES_mips64 := $(PIXELFLINGER_SRC_FILES_mips64)
 LOCAL_CFLAGS := $(PIXELFLINGER_CFLAGS)
 LOCAL_EXPORT_C_INCLUDE_DIRS := $(LOCAL_PATH)/include
 LOCAL_C_INCLUDES += $(LOCAL_EXPORT_C_INCLUDE_DIRS) \
+                    $(LOCAL_PATH)/include \
 		    external/safe-iop/include
 LOCAL_SHARED_LIBRARIES := libcutils liblog libutils
 
@@ -95,6 +100,9 @@ LOCAL_CFLAGS := $(PIXELFLINGER_CFLAGS)
 LOCAL_CLANG_ASFLAGS_arm += -no-integrated-as
 # arch-arm64/col32cb16blend.S does not compile with Clang.
 LOCAL_CLANG_ASFLAGS_arm64 += -no-integrated-as
+LOCAL_C_INCLUDES += $(LOCAL_EXPORT_C_INCLUDE_DIRS) \
+                    $(LOCAL_PATH)/include \
+		    external/safe-iop/include
 include $(BUILD_STATIC_LIBRARY)
 
 
