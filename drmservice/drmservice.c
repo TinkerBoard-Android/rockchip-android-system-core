@@ -1086,7 +1086,7 @@ int main( int argc, char *argv[] )
 
 	if(SERIALNO_FROM_IDB)//read serialno form idb
 	{		
-		if(!strcmp(prop_board_platform,"rk3399")){
+		if(!strcmp(prop_board_platform,"rk3399") || !strcmp(prop_board_platform,"rk3328")){
 			rk3399_vendor_storage_read_sn();
 		}else{
 			rknand_sys_storage_test_sn();
