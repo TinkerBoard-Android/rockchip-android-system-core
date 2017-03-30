@@ -366,9 +366,7 @@ static void update_screen_state(struct charger *charger, int64_t now)
         gr_init();
         gr_font_size(&char_width, &char_height);
 
-#ifndef CHARGER_DISABLE_INIT_BLANK
         gr_fb_blank(true);
-#endif
         minui_inited = true;
     }
 
