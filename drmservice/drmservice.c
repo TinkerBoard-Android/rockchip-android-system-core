@@ -1078,27 +1078,28 @@ int main( int argc, char *argv[] )
 	property_get("ro.board.platform", prop_board_platform, "");
 	SLOGE("get prop_board_platform,prop_board_platform = %s , diff=%d",prop_board_platform,
 		strcmp(prop_board_platform,"rk3399"));
-	
+
     //get hid data
     rknand_sys_storage_test_hid();
     SLOGE("Get HID data:%s", hid_buf_idb);
     property_set("persist.sys.hid", hid_buf_idb[0] ? hid_buf_idb : "");
 
 	if(SERIALNO_FROM_IDB)//read serialno form idb
-	{		
-		if(!strcmp(prop_board_platform,"rk3399") || !strcmp(prop_board_platform,"rk3328")){
+	{
+		if(!strcmp(prop_board_platform,"rk3399") || !strcmp(prop_board_platform,"rk3328") ||
+                   !strcmp(prop_board_platform,"rk3288")) {
 			rk3399_vendor_storage_read_sn();
-		}else{
+		}else {
 			rknand_sys_storage_test_sn();
 		}
-		property_set("sys.serialno", sn_buf_idb[0] ? sn_buf_idb : ""); 
+		property_set("sys.serialno", sn_buf_idb[0] ? sn_buf_idb : "");
         	write_serialno2kernel(sn_buf_idb);
 		SLOGE("get serialno from idb,serialno = %s",sn_buf_idb);
 	}
 	else//auto generate serialno
 	{
 		generate_device_serialno(10,sn_buf_auto);
-		property_set("sys.serialno", sn_buf_auto[0] ? sn_buf_auto : ""); 
+		property_set("sys.serialno", sn_buf_auto[0] ? sn_buf_auto : "");
        		 write_serialno2kernel(sn_buf_auto);
 		SLOGE("auto generate serialno,serialno = %s",sn_buf_auto);
 	}
