@@ -937,11 +937,11 @@ void detect_secure_boot()
 	if(strstr(buf,"SecureBootCheckOk=1")!=NULL){
 		if(DEBUG_LOG)
 			SLOGE("------detect SecureBoot-----");
-		property_set("ro.secureboot","true");
+		property_set("sys.secureboot","true");
 	}else{
 		if(DEBUG_LOG)
 			SLOGE("------detect not SecureBoot---");
-		property_set("ro.secureboot","false");
+		property_set("sys.secureboot","false");
 	}
 	close(fd);
 }
