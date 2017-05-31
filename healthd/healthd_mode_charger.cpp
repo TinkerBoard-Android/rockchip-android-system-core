@@ -476,7 +476,7 @@ static void update_screen_state(struct charger *charger, int64_t now)
         gr_font_size(gr_sys_font(), &char_width, &char_height);
         init_status_display(batt_anim);
 
-        gr_fb_blank(true);
+        //gr_fb_blank(true);
         minui_inited = true;
     }
 
