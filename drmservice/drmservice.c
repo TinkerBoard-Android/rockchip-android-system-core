@@ -1022,6 +1022,7 @@ void copy_dir(const char *old_path,const char *new_path)
 		SLOGE("opendir %s fail\n",old_path);
 		return;
 	}
+	mkdir("/data/media/0",0755);//in case /data/media/0 not created
 	char *root_dir_abs_path = get_abs_path("/data/media/0",new_path);
 	SLOGE("--root_dir_abs_path =%s--\n",root_dir_abs_path);
 	if(mkdir(root_dir_abs_path,0777)==-1)
