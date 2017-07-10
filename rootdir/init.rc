@@ -597,6 +597,8 @@ on charger
 
 on property:vold.decrypt=trigger_reset_main
     class_reset main
+    setprop service.bootanim.exit 0
+    start bootanim
 
 on property:vold.decrypt=trigger_load_persist_props
     load_persist_props
