@@ -1053,12 +1053,14 @@ void copy_dir(const char *old_path,const char *new_path)
 		SLOGE("--file abs path =%s\n",file_abs_path);
 		copy_file(dirp->d_name,file_abs_path);
 		chmod(file_abs_path,S_IRUSR|S_IWUSR|S_IXUSR|S_IRGRP|S_IWGRP|S_IXGRP|S_IROTH|S_IXOTH);
+		//chown(file_abs_path,1023,1023);//if want to deleteable,open this
 		free(file_abs_path);
 	}
 
 	closedir(dir);
 	change_path(p);
 	chmod(root_dir_abs_path,S_IRUSR|S_IWUSR|S_IXUSR|S_IRGRP|S_IWGRP|S_IXGRP|S_IROTH|S_IXOTH);
+	//chown(root_dir_abs_path,1023,1023);//if want to deleteable,open this
 	free(root_dir_abs_path);
 }
 
@@ -1117,9 +1119,13 @@ int main( int argc, char *argv[] )
 	}*/
 	detect_secure_boot();
 	if ((*propbuf_source != '\0')&&( *propbuf_dest != '\0')) {
-		SLOGE("---do bootup copy from %s to %s",propbuf_source,propbuf_dest);
-		copy_dir(propbuf_source,propbuf_dest);
-		SLOGE("---done bootup copy--");
+		char prop_buf[PROPERTY_VALUE_MAX];
+		property_get("persist.sys.first_booting", prop_buf, "");
+		if(strcmp(prop_buf,"false")){//if want to only copy after recovery,open this
+			SLOGE("---do bootup copy from %s to %s",propbuf_source,propbuf_dest);
+			copy_dir(propbuf_source,propbuf_dest);
+			SLOGE("---done bootup copy--");
+		}
 	}
 
 	//read_region_tag();//add by xzj to add property ro.board.zone read from flash
