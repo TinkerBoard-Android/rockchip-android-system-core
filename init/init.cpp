@@ -449,6 +449,11 @@ static void symlink_fstab() {
     strcat(fstab_path, hardware);
     strcat(fstab_path, ".bootmode.");
     strcat(fstab_path, bootmode);
+    std::string soc_value = property_get("ro.rk.soc");
+    if (soc_value.find("rk3288") != std::string::npos) {
+        strcat(fstab_path, ".");
+        strcat(fstab_path, soc_value.c_str());
+    }
     strcat(fstab_default_path, hardware);
     ret = symlink(fstab_path, fstab_default_path);
     if (ret < 0) {
@@ -554,32 +559,86 @@ static void process_kernel_dt() {
     }
 }
 
+/*
+ * busybox hd /proc/device-tree/compatible
+ * 00000000  72 6f 63 6b 63 68 69 70  2c 72 6b 33 32 38 38 2d  |rockchip,rk3288-|
+ * 00000010  65 76 62 2d 72 6b 38 31  38 00 72 6f 63 6b 63 68  |evb-rk818.rockch|
+ * 00000020  69 70 2c 72 6b 33 32 38  38 00                    |ip,rk3288.|
+ * 0000002a
+ *
+ * Conver content of this node to readable soc string
+*/
+static int convert_compat(char *compat, const size_t len, char *soc)
+{
+    // count entries
+    int entries = 0;
+    // each '\0' is end of an entry
+    for(const char *p = compat; (size_t) (p - compat) < len; ++p) {
+        if(*p == '\0')
+            entries += 1;
+    }
+
+    // alloc pointers for entries and one pointer for last NULL
+    char **array = (char **) malloc((entries + 1) * sizeof(char *));
+    if(array == NULL)
+        return -1;
+
+    // assign pointers to point into the compat string
+    int off = 0;
+    for(int i = 0; i < entries; ++i) {
+        array[i] = compat + off;
+        // find next end of entry
+        while(compat[off] != '\0')
+            off += 1;
+
+        off += 1; // skip '\0', point to the next entry
+    }
+
+    // find chip offset("rockchip,rk3288w")
+    array[entries -1] = strstr(array[entries -1], ",");
+
+    // copy soc name to OUT arg
+    strlcpy(soc, array[entries -1] + 1, strlen(array[entries -1]));
+
+    free(array);
+    return 0;
+}
+
 static void set_soc_if_need() {
     std::string soc_value = property_get("ro.rk.soc");
-    if (soc_value.empty()){
-	char *s1,*s2;
-	char cpuinfo[4096];
-	char soc[20];
-	int cpuinfo_len = 0;
-	proc_read( "/proc/cpuinfo", cpuinfo, sizeof(cpuinfo) );
-        cpuinfo_len = strlen(cpuinfo);	
-	for(int i=0;i<cpuinfo_len;i++){//all to lowercase
-		cpuinfo[i] = tolower(cpuinfo[i]);
-	}
-	s1 = strstr(cpuinfo, "rockchip");
-	if(s1 == NULL)
-		return;
-	s2 = strstr(s1, "revision");
-	if((strlen(s1)>15)&& s2!=NULL){
-		int soc_len = strlen(s1) - strlen(s2) - 9 -1;
-		strncpy(soc,s1+9,soc_len);
-		soc[soc_len]='\0';
-		ERROR("-----set_soc_if_need,get soc=%s,len = %d\n",soc,soc_len);
-		if(strncmp(soc,"rk",2)==0){
-			ERROR("---ready to set ro.rk.soc to %s\n",soc);	
-			property_set("ro.rk.soc",soc);
-		}
-	}
+    if (soc_value.empty()) {
+        //First probe soc running on kernel 3.10
+        int fd;
+        char buf[256];
+
+        fd = open("/sys/devices/system/cpu/soc", O_RDONLY);
+        if (fd >= 0) {
+            int n = read(fd, buf, sizeof(buf) - 1);
+            if (n > 0) {
+                if (buf[n-1] == '\n')
+                    n--;
+                buf[n] = 0;
+                ERROR("Setting ro.rk.soc=%s\n", buf);
+                property_set("ro.rk.soc", buf);
+                close(fd);
+                return;
+            }
+            close(fd);
+        }
+
+        //Probe for soc running on kernel 4.4
+        fd = open("/proc/device-tree/compatible", O_RDONLY);
+        if (fd >= 0) {
+            int n = read(fd, buf, sizeof(buf));
+            if (n > 0) {
+                char soc[16];
+                if (!convert_compat(buf, n, soc)) {
+                    ERROR("Setting ro.rk.soc=%s\n", soc);
+                    property_set("ro.rk.soc", soc);
+                }
+            }
+            close(fd);
+        }
     }
 }
 
@@ -774,11 +833,12 @@ int main(int argc, char** argv) {
         process_kernel_dt();
         process_kernel_cmdline();
 
+        //add by xzj to set ro.rk.soc read from /proc/cpuinfo if not set
+        set_soc_if_need();
+
         // Propagate the kernel variables to internal variables
         // used by init as well as the current required properties.
         export_kernel_boot_props();
-	//add by xzj to set ro.rk.soc read from /proc/cpuinfo if not set
-	set_soc_if_need();
     }
 
     // Set up SELinux, including loading the SELinux policy if we're in the kernel domain.
