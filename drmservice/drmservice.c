@@ -416,7 +416,7 @@ int rk3399_vendor_storage_read_sn(void)
 	int sys_fd = open("/dev/vendor_storage",O_RDWR,0);
 	if(sys_fd < 0){
 		SLOGE("vendor_storage open fail\n");		
-		return -1;
+		goto try_drmboot;
 	}
 	
 	req.tag = VENDOR_REQ_TAG;
@@ -428,7 +428,7 @@ int rk3399_vendor_storage_read_sn(void)
 	/* return req->len is the real data length stored in the NV-storage */	
 	if(ret){
 		SLOGE("vendor read error\n");			
-		return -1;
+		goto try_drmboot;
 	}
     //get the sn length
     len = req.len;
@@ -436,13 +436,18 @@ int rk3399_vendor_storage_read_sn(void)
     {
 	len =30;
     }
-    if(len < 0)
+    if(len <= 0)
     {
-	len =0;
+	goto try_drmboot;
     }	
     memcpy(sn_buf_idb,req.data,len);
-	SLOGE("vendor read sn_buf_idb:%s\n",sn_buf_idb);
+    SLOGE("vendor read sn_buf_idb:%s\n",sn_buf_idb);
     //property_set("sys.serialno",sn_buf_idb);   
+    return 0;
+
+try_drmboot:
+    SLOGE("----vendor read sn error,try drmboot----");
+    rknand_sys_storage_test_sn(); 
     return 0;
 }
 /*
@@ -490,7 +495,7 @@ void read_region_tag()
 	}
 }
 
-static int insmod(const char *filename)
+int insmod(const char *filename)
 {
 	void *module = NULL;
 	unsigned int size;
