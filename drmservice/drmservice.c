@@ -406,7 +406,7 @@ int rknand_sys_storage_test_hid(void)
 
 
 
-int rk3399_vendor_storage_read_sn(void)
+int vendor_storage_read_sn(void)
 {
     uint32 i;
 	int ret ;
@@ -1094,12 +1094,7 @@ int main( int argc, char *argv[] )
 
 	if(SERIALNO_FROM_IDB)//read serialno form idb
 	{
-		if(!strcmp(prop_board_platform,"rk3399") || !strcmp(prop_board_platform,"rk3328") ||
-                   !strcmp(prop_board_platform,"rk3288") || !strcmp(prop_board_platform,"rk3368")) {
-			rk3399_vendor_storage_read_sn();
-		}else {
-			rknand_sys_storage_test_sn();
-		}
+		vendor_storage_read_sn();
 		property_set("sys.serialno", sn_buf_idb[0] ? sn_buf_idb : "");
         	write_serialno2kernel(sn_buf_idb);
 		SLOGE("get serialno from idb,serialno = %s",sn_buf_idb);
