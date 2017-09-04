@@ -33,6 +33,8 @@
 #include <sys/epoll.h>
 #include <sys/timerfd.h>
 #include <utils/Errors.h>
+#include <utils/SystemClock.h>
+#include <utils/Timers.h>
 
 using namespace android;
 
@@ -84,6 +86,7 @@ static int wakealarm_fd;
 static int awake_poll_interval = -1;
 
 static int wakealarm_wake_interval = DEFAULT_PERIODIC_CHORES_INTERVAL_FAST;
+static int wakealarm_wake_point = 0;
 
 static BatteryMonitor* gBatteryMonitor;
 
@@ -169,8 +172,27 @@ int healthd_register_event(int fd, void (*handler)(uint32_t), EventWakeup wakeup
 static void wakealarm_set_interval(int interval) {
     struct itimerspec itval;
 
+    int64_t now_elapsed;
+    int64_t wake_point=0;
+    int mAppAlarmFixedAlignment = 10 * 60 * 1000;
+
     if (wakealarm_fd == -1)
             return;
+
+    if(interval != healthd_config.periodic_chores_interval_fast){
+            now_elapsed = android::elapsedRealtime();
+	    wake_point = (now_elapsed / mAppAlarmFixedAlignment + 1) * mAppAlarmFixedAlignment;
+	    if (wakealarm_wake_point == wake_point){
+	           return;
+	    }
+	    wakealarm_wake_point = wake_point;
+	    interval  = (wake_point - now_elapsed) / 1000;
+	    if (interval < 10){
+		interval += 600;
+	    }
+    } else {
+	    wakealarm_wake_point = 0;
+    }
 
     wakealarm_wake_interval = interval;
 
