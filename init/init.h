@@ -26,8 +26,9 @@ class Service;
 
 extern const char *ENV[32];
 /* IMPORTANT: THE VALUE OF STORAGE_MEDIA MUST BE CONSISTANT WITH UBOOT */
-#define EMMC_RETRY_COUNT 200
-#define STORAGE_MEDIA "storagemedia=emmc"
+#define EMMC_RETRY_COUNT 20
+#define STORAGE_MEDIA_EMMC "storagemedia=emmc"
+#define STORAGE_MEDIA_SD "storagemedia=sd"
 
 extern bool waiting_for_exec;
 extern int have_console;

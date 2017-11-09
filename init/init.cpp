@@ -463,6 +463,7 @@ static void symlink_fstab() {
 
 static void export_kernel_boot_props() {
     char cmdline[1024];
+    char* s0;
     char* s1;
     char* s2;
     char* s3;
@@ -484,17 +485,22 @@ static void export_kernel_boot_props() {
     //if storagemedia is emmc, so we will wait emmc init finish
     for (int i = 0; i < EMMC_RETRY_COUNT; i++) {
         proc_read( "/proc/cmdline", cmdline, sizeof(cmdline) );
-        s1 = strstr(cmdline, STORAGE_MEDIA);
+        s0 = strstr(cmdline, STORAGE_MEDIA_SD);
+        s1 = strstr(cmdline, STORAGE_MEDIA_EMMC);
         s2 = strstr(cmdline, "androidboot.mode=emmc");
 	s3 = strstr(cmdline, "storagemedia=nvme");
 	s4 = strstr(cmdline, "androidboot.mode=nvme");
 
-        if ((s1 == NULL) && (s3 == NULL)) {
+        if ((s0 == NULL) && (s1 == NULL) && (s3 == NULL)) {
             //storagemedia is unknow
             break;
         }
 
-        if ((s1 > 0) && (s2 > 0)) {
+        if ((s0 > 0) && (s2 > 0)) {
+            ERROR("OK,SD DRIVERS INIT OK\n");
+            property_set("ro.boot.mode", "sd");
+            break;
+        } else if ((s1 > 0) && (s2 > 0)) {
             ERROR("OK,EMMC DRIVERS INIT OK\n");
             property_set("ro.boot.mode", "emmc");
             break;
@@ -503,8 +509,9 @@ static void export_kernel_boot_props() {
 	    property_set("ro.boot.mode", "nvme");
 	    break;
 	} else {
-            ERROR("OK,EMMC DRIVERS NOT READY, RERRY=%d\n", i);
-            usleep(10000);
+            ERROR("OK,EMMC DRIVERS NOT READY, RETRY=%d\n", i);
+            sleep(1);
+            //usleep(10000);
         }
     }
 
