@@ -475,7 +475,7 @@ static void export_kernel_boot_props() {
         const char *default_value;
     } prop_map[] = {
         //{ "ro.boot.serialno",   "ro.serialno",   "", },
-        { "ro.boot.mode",       "ro.bootmode",   "unknown", },
+        //{ "ro.boot.mode",       "ro.bootmode",   "unknown", },
         { "ro.boot.baseband",   "ro.baseband",   "unknown", },
         { "ro.boot.bootloader", "ro.bootloader", "unknown", },
         { "ro.boot.hardware",   "ro.hardware",   "unknown", },
@@ -498,15 +498,15 @@ static void export_kernel_boot_props() {
 
         if ((s0 > 0) && (s2 > 0)) {
             ERROR("OK,SD DRIVERS INIT OK\n");
-            property_set("ro.boot.mode", "sd");
+            property_set("ro.bootmode", "sd");
             break;
         } else if ((s1 > 0) && (s2 > 0)) {
             ERROR("OK,EMMC DRIVERS INIT OK\n");
-            property_set("ro.boot.mode", "emmc");
+            property_set("ro.bootmode", "emmc");
             break;
         } else if ((s3 > 0) && (s4 > 0)) {
 	    ERROR("OK,NVME DRIVERS INIT OK\n");
-	    property_set("ro.boot.mode", "nvme");
+	    property_set("ro.bootmode", "nvme");
 	    break;
 	} else {
             ERROR("OK,EMMC DRIVERS NOT READY, RETRY=%d\n", i);
