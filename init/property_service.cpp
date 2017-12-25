@@ -380,7 +380,24 @@ static void load_properties(char *data, const char *filter)
                     if (strcmp(key, filter)) continue;
                 }
             }
-
+            // Change "ro.product.model" value read from /system/build.prop
+            if (strncmp(key, "ro.product.model", 16) == 0 && strlen(key) == 16) {
+                int fd = open("/proc/board_info", O_RDONLY);
+                char buffer[128]="";
+                if (fd < 0) {
+                    ERROR("fail to open /proc/board_info!\n");
+                }
+                int len = read(fd, buffer, sizeof(buffer)-1);
+                close(fd);
+                if (len <= 0) {
+                    ERROR("fail to read /proc/board_info!\n");
+                } else {
+                    buffer[len-1] = '\0'; // erase "\n" in /proc/board_info node
+                    value=buffer;
+                    ERROR("ASUS change %s from rk3288 to %s (length=%d)\n",
+                           key, value, strlen(value));
+                }
+            }
             property_set(key, value);
         }
     }
