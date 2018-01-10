@@ -468,6 +468,7 @@ static void export_kernel_boot_props() {
     char* s2;
     char* s3;
     char* s4;
+    char* s5;
 
     struct {
         const char *src_prop;
@@ -488,15 +489,16 @@ static void export_kernel_boot_props() {
         s0 = strstr(cmdline, STORAGE_MEDIA_SD);
         s1 = strstr(cmdline, STORAGE_MEDIA_EMMC);
         s2 = strstr(cmdline, "androidboot.mode=emmc");
-	s3 = strstr(cmdline, "storagemedia=nvme");
-	s4 = strstr(cmdline, "androidboot.mode=nvme");
+        s3 = strstr(cmdline, "storagemedia=nvme");
+        s4 = strstr(cmdline, "androidboot.mode=nvme");
+        s5 = strstr(cmdline, "androidboot.mode=sd");
 
         if ((s0 == NULL) && (s1 == NULL) && (s3 == NULL)) {
             //storagemedia is unknow
             break;
         }
 
-        if ((s0 > 0) && (s2 > 0)) {
+        if ((s0 > 0) && (s5 > 0)) {
             ERROR("OK,SD DRIVERS INIT OK\n");
             property_set("ro.bootmode", "sd");
             break;
