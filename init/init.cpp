@@ -501,10 +501,12 @@ static void export_kernel_boot_props() {
         if ((s0 > 0) && (s5 > 0)) {
             ERROR("OK,SD DRIVERS INIT OK\n");
             property_set("ro.bootmode", "sd");
+	    write_file("/sys/devices/platform/gpio-leds/leds/act-led/trigger", "mmc0");
             break;
         } else if ((s1 > 0) && (s2 > 0)) {
             ERROR("OK,EMMC DRIVERS INIT OK\n");
             property_set("ro.bootmode", "emmc");
+	    write_file("/sys/devices/platform/gpio-leds/leds/act-led/trigger", "mmc1");
             break;
         } else if ((s3 > 0) && (s4 > 0)) {
 	    ERROR("OK,NVME DRIVERS INIT OK\n");
