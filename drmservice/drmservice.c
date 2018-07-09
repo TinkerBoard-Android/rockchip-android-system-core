@@ -29,6 +29,7 @@
 #define DEVICE_SERIALNO "/data/misc/wifi/serialno"
 #define USB_SERIAL_PATH "/sys/class/android_usb/android0/iSerial"
 #define USB_SERIAL_PATH1 "/config/usb_gadget/g1/strings/0x409/serialnumber"
+#define EEPROM_PATH "/sys/bus/i2c/devices/2-0050/eeprom"
 
 extern int init_module(void *, unsigned long, const char *);
 extern int delete_module(const char *, unsigned int);
@@ -117,6 +118,64 @@ typedef struct tagRKNAND_SYS_STORGAE
 	unsigned long len;
     unsigned char data[RKNAND_SYS_STORGAE_DATA_LEN];
 }RKNAND_SYS_STORGAE;
+
+int is_valid_ppid(char *ppid)
+{
+    int i;
+
+    for (i = 0; i < 15; i++) {
+        if (!isalnum(ppid[i]))
+            return 0;
+    }
+
+    return 1;
+}
+
+int is_valid_serialno(char *serialno)
+{
+    int i;
+
+    for (i = 0; i < 12; i++) {
+        if (!isalnum(serialno[i]))
+            return 0;
+    }
+
+    return 1;
+}
+
+int read_serialno_from_eeprom(char *serial_buffer)
+{
+    int fd;
+    int i;
+    char ppid[20], serialno[12];
+
+    fd = open(EEPROM_PATH, O_RDONLY);
+    if (fd < 0) {
+      SLOGE("%s open fail\n", EEPROM_PATH);
+      return -1;
+    }
+
+    lseek(fd, 0x6, SEEK_SET);
+
+    read(fd, ppid, 20);
+    read(fd, serialno, 12);
+
+    close(fd);
+
+    if (is_valid_serialno(serialno)) {
+        if (serialno[2] == 'M' &&
+	    serialno[3] == '0' &&
+ 	    serialno[4] == 'D' &&
+	    serialno[5] == '3')
+	    memcpy(serial_buffer, serialno, 12);
+    }
+    else {
+        if (is_valid_ppid(ppid))
+	    memcpy(serial_buffer, ppid, 15);
+    }
+
+    return 0;
+}
 
 /*
 disable secureboot/keybox
@@ -1102,6 +1161,7 @@ int main( int argc, char *argv[] )
 	else//auto generate serialno
 	{
 		generate_device_serialno(10,sn_buf_auto);
+		read_serialno_from_eeprom(sn_buf_auto);
 		property_set("sys.serialno", sn_buf_auto[0] ? sn_buf_auto : "");
        		 write_serialno2kernel(sn_buf_auto);
 		SLOGE("auto generate serialno,serialno = %s",sn_buf_auto);
