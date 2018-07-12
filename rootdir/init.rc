@@ -663,13 +663,34 @@ service console /system/bin/sh
     group shell log readproc
     seclabel u:r:shell:s0
 
-service ril-daemon /system/bin/rild
+service ril-default /system/bin/rild
     class main
     socket rild stream 660 root radio
     socket sap_uim_socket1 stream 660 bluetooth bluetooth
     socket rild-debug stream 660 radio system
     user root
     group radio cache inet misc audio log
+
+service ril-ec25 /system/bin/rild -l /system/lib/libreference-ril-ec25.so
+    class main
+    socket rild stream 660 root radio
+    socket rild-debug stream 660 radio system
+    user root
+    group radio cache inet misc audio sdcard_rw log
+
+service ril-slm750 /system/bin/rild -l /system/lib/libreference-ril-slm750.so -- -d /dev/ttyUSB2 -c /dev/ttyUSB1
+    class main
+    socket rild stream 660 root radio
+    socket rild-debug stream 660 radio system
+    user root
+    group radio cache inet misc audio log sdcard_rw net_admin net_raw dhcp
+
+service pppd_gprs /system/etc/ppp/init.gprs-pppd
+    socket rild-ppp stream 660 root radio
+    user root
+    group radio cache inet misc log system root
+    disabled
+    seclabel u:r:ppp:s0
 
 on property:ro.debuggable=1
     # Give writes to anyone for the trace folder on debug builds.
