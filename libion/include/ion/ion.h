@@ -40,7 +40,11 @@ int ion_map(int fd, ion_user_handle_t handle, size_t length, int prot,
             int flags, off_t offset, unsigned char **ptr, int *map_fd);
 int ion_share(int fd, ion_user_handle_t handle, int *share_fd);
 int ion_import(int fd, int share_fd, ion_user_handle_t *handle);
-
+#ifdef LIBION_ROCKCHIP
+int ion_get_phys(int fd, ion_user_handle_t handle, unsigned long *phys);
+int ion_secure_alloc(int fd, size_t len, unsigned long *phys);
+int ion_secure_free(int fd, size_t len, unsigned long phys);
+#endif
 /**
   * Add 4.12+ kernel ION interfaces here for forward compatibility
   * This should be needed till the pre-4.12+ ION interfaces are backported.

@@ -18,6 +18,30 @@ cc_library {
     cflags: ["-Werror"],
 }
 
+cc_library {
+    name: "libion_ext",
+    vendor: true,
+    vndk: {
+        enabled: true,
+        extends: "libion",
+        support_system_process: true,
+    },
+    srcs: ["ion.c"],
+    shared_libs: ["liblog"],
+    local_include_dirs: [
+        "include",
+        "kernel-headers",
+    ],
+    export_include_dirs: [
+        "include",
+        "kernel-headers",
+    ],
+    cflags: [
+        "-Werror",
+        "-DLIBION_ROCKCHIP",
+    ],
+}
+
 cc_binary {
     name: "iontest",
     srcs: ["ion_test.c"],

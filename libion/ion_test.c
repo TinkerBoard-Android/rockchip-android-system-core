@@ -70,6 +70,49 @@ void ion_alloc_test()
     printf("ion alloc test: passed\n");
 }
 
+#ifdef LIBION_ROCKCHIP
+int _ion_secure_alloc_test(int *fd, size_t len, unsigned long *phys)
+{
+    int ret;
+
+    *fd = ion_open();
+    if (*fd < 0)
+        return *fd;
+
+    ret = ion_secure_alloc(*fd, len, phys);
+    if (ret)
+        printf("%s failed: %s\n", __func__, strerror(ret));
+    else
+        printf("%s success: phys = 0x%lx\n", __func__, *phys);
+
+    return ret;
+}
+
+void ion_secure_alloc_test()
+{
+    int fd, ret;
+    unsigned long phys;
+    ion_user_handle_t handle;
+
+    if(_ion_secure_alloc_test(&fd, 4096, &phys))
+        return;
+
+    ret = ion_secure_free(fd, 4096, phys);
+    if (ret) {
+        printf("%s failed: %s 0x%lx\n", __func__, strerror(ret), phys);
+        return;
+    }
+
+    ion_close(fd);
+    printf("ion secure alloc test: passed\n");
+    return;
+}
+#else
+void ion_secure_alloc_test() {
+    return;
+}
+#endif
+
 void ion_map_test()
 {
     int fd, map_fd, ret;
@@ -213,7 +256,7 @@ void ion_share_test()
 int main(int argc, char* argv[]) {
     int c;
     enum tests {
-        ALLOC_TEST = 0, MAP_TEST, SHARE_TEST,
+        ALLOC_TEST = 0, MAP_TEST, SHARE_TEST, SECURE_ALLOC_TEST,
     };
 
     while (1) {
@@ -227,9 +270,10 @@ int main(int argc, char* argv[]) {
             {"align", required_argument, 0, 'g'},
             {"map_flags", required_argument, 0, 'z'},
             {"prot", required_argument, 0, 'p'},
+            {"secure_alloc", no_argument, 0, 'e'},
         };
         int i = 0;
-        c = getopt_long(argc, argv, "af:h:l:mr:st", opts, &i);
+        c = getopt_long(argc, argv, "af:h:l:mr:ste", opts, &i);
         if (c == -1)
             break;
 
@@ -261,6 +305,9 @@ int main(int argc, char* argv[]) {
         case 'a':
             test = ALLOC_TEST;
             break;
+        case 'e':
+            test = SECURE_ALLOC_TEST;
+            break;
         case 'm':
             test = MAP_TEST;
             break;
@@ -276,6 +323,9 @@ int main(int argc, char* argv[]) {
         case ALLOC_TEST:
             ion_alloc_test();
             break;
+        case SECURE_ALLOC_TEST:
+            ion_secure_alloc_test();
+            break;
         case MAP_TEST:
             ion_map_test();
             break;
@@ -283,7 +333,7 @@ int main(int argc, char* argv[]) {
             ion_share_test();
             break;
         default:
-            printf("must specify a test (alloc, map, share)\n");
+            printf("must specify a test (alloc, map, share, securealloc)\n");
     }
     return 0;
 }
