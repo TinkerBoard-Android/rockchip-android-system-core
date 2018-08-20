@@ -377,7 +377,7 @@ static void export_kernel_boot_props() {
         const char *dst_prop;
         const char *default_value;
     } prop_map[] = {
-        { "ro.boot.serialno",   "ro.serialno",   "", },
+        //{ "ro.boot.serialno",   "ro.serialno",   "", },
         { "ro.boot.mode",       "ro.bootmode",   "unknown", },
         { "ro.boot.baseband",   "ro.baseband",   "unknown", },
         { "ro.boot.bootloader", "ro.bootloader", "unknown", },
