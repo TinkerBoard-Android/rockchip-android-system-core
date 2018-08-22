@@ -82,6 +82,31 @@ static bool FindPciDevicePrefix(const std::string& path, std::string* result) {
  * the supplied buffer with the virtual block device ID and return 0.
  * If it doesn't start with a virtual block device, or there is some
  * error, return -1 */
+static bool FindNandDevicePrefix(const std::string& path, std::string* result) {
+    result->clear();
+
+    if (!StartsWith(path, "/devices/virtual")) return false;
+
+    LOG(VERBOSE) << "Find nand device prefix, path is" << path;
+    /* Beginning of the prefix is the initial "block/rknand_" after "/devices/virtual/" */
+    std::string::size_type start = 17;
+
+    /* End of the prefix is one path '/' later, capturing the
+       virtual block partation Name. Example: rknand_system */
+    auto end = path.find('/', start);
+    if (end == std::string::npos) return false;
+
+    auto length = end - start;
+    if (length == 0) return false;
+
+    *result = path.substr(start, length);
+    return true;
+}
+
+/* Given a path that may start with a virtual block device, populate
+ * the supplied buffer with the virtual block device ID and return 0.
+ * If it doesn't start with a virtual block device, or there is some
+ * error, return -1 */
 static bool FindVbdDevicePrefix(const std::string& path, std::string* result) {
     result->clear();
 
@@ -311,6 +336,8 @@ std::vector<std::string> DeviceHandler::GetBlockDeviceSymlinks(const Uevent& uev
         type = "pci";
     } else if (FindVbdDevicePrefix(uevent.path, &device)) {
         type = "vbd";
+    } else if (FindNandDevicePrefix(uevent.path, &device)) {
+        type = "virtual";
     } else {
         return {};
     }
