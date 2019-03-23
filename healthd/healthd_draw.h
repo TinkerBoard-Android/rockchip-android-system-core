@@ -54,7 +54,7 @@ class HealthdDraw {
   // Draws clock text, if animation contains text_field data.
   virtual void draw_clock(const animation* anim);
   // Draws battery percentage text if animation contains text_field data.
-  virtual void draw_percent(const animation* anim);
+  virtual void draw_percent(const animation* anim, int y_start);
   // Draws charger->surf_unknown or basic text.
   virtual void draw_unknown(GRSurface* surf_unknown);
 
