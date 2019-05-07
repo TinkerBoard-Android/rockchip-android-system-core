@@ -30,6 +30,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 
+#include <linux/rockchip_ion.h>
 #include <ion/ion.h>
 #include "ion_4.12.h"
 
@@ -196,6 +197,62 @@ int ion_sync_fd(int fd, int handle_fd) {
 
     return ion_ioctl(fd, ION_IOC_SYNC, &data);
 }
+
+#ifdef LIBION_ROCKCHIP
+int ion_get_phys(int fd, ion_user_handle_t handle, unsigned long *phys)
+{
+    struct ion_phys_data phys_data;
+    struct ion_custom_data data;
+
+    phys_data.handle = handle;
+    phys_data.phys = 0;
+
+    data.cmd = ION_IOC_GET_PHYS;
+    data.arg = (unsigned long)&phys_data;
+
+    int ret = ion_ioctl(fd, ION_IOC_CUSTOM, &data);
+    if (ret<0)
+        return ret;
+
+    *phys = phys_data.phys;
+
+    return 0;
+}
+
+int ion_secure_free(int fd, size_t len, unsigned long phys)
+{
+    struct ion_phys_data phys_data;
+    struct ion_custom_data data;
+
+    phys_data.handle = 0;
+    phys_data.phys = phys;
+    phys_data.size = len;
+
+    data.cmd = ION_IOC_FREE_SECURE;
+    data.arg = (unsigned long)&phys_data;
+
+    return ion_ioctl(fd, ION_IOC_CUSTOM, &data);
+}
+
+int ion_secure_alloc(int fd, size_t len, unsigned long *phys)
+{
+    struct ion_phys_data phys_data;
+    struct ion_custom_data data;
+
+    phys_data.handle = 0;
+    phys_data.size = len;
+
+    data.cmd = ION_IOC_ALLOC_SECURE;
+    data.arg = (unsigned long)&phys_data;
+
+    int ret = ion_ioctl(fd, ION_IOC_CUSTOM, &data);
+    if (ret<0)
+        return ret;
+
+    *phys = phys_data.phys;
+    return ret;
+}
+#endif
 
 int ion_query_heap_cnt(int fd, int* cnt) {
     int ret;
