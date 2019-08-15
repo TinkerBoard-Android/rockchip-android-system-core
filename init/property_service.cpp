@@ -642,8 +642,14 @@ static void LoadProperties(char* data, const char* filter, const char* filename,
                 while (isspace(*key)) key++;
             }
 
-            load_properties_from_file(fn, key, properties);
+            std::string raw_filename(fn);
+            std::string expanded_filename;
+            if (!expand_props(raw_filename, &expanded_filename)) {
+                LOG(ERROR) << "Could not expand filename '" << raw_filename << "'";
+                continue;
+            }
 
+            load_properties_from_file(expanded_filename.c_str(), key, properties);
         } else {
             value = strchr(key, '=');
             if (!value) continue;
@@ -883,8 +889,12 @@ void property_load_boot_defaults(bool load_debug_prop) {
     load_properties_from_file("/system/build.prop", nullptr, &properties);
     load_properties_from_file("/vendor/default.prop", nullptr, &properties);
     load_properties_from_file("/vendor/build.prop", nullptr, &properties);
-    load_properties_from_file("/odm/default.prop", nullptr, &properties);
-    load_properties_from_file("/odm/build.prop", nullptr, &properties);
+    if (SelinuxGetVendorAndroidVersion() >= __ANDROID_API_Q__) {
+        load_properties_from_file("/odm/etc/build.prop", nullptr, &properties);
+    } else {
+        load_properties_from_file("/odm/default.prop", nullptr, &properties);
+        load_properties_from_file("/odm/build.prop", nullptr, &properties);
+    }
     load_properties_from_file("/product/build.prop", nullptr, &properties);
     load_properties_from_file("/product_services/build.prop", nullptr, &properties);
     load_properties_from_file("/factory/factory.prop", "ro.*", &properties);

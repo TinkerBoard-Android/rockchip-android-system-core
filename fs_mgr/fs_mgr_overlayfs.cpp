@@ -90,7 +90,7 @@ std::vector<std::string> fs_mgr_overlayfs_required_devices(Fstab*) {
     return {};
 }
 
-bool fs_mgr_overlayfs_setup(const char*, const char*, bool* change) {
+bool fs_mgr_overlayfs_setup(const char*, const char*, bool* change, bool) {
     if (change) *change = false;
     return false;
 }
@@ -139,7 +139,11 @@ bool fs_mgr_filesystem_has_space(const std::string& mount_point) {
     // If we have access issues to find out space remaining, return true
     // to prevent us trying to override with overlayfs.
     struct statvfs vst;
-    if (statvfs(mount_point.c_str(), &vst)) return true;
+    auto save_errno = errno;
+    if (statvfs(mount_point.c_str(), &vst)) {
+        errno = save_errno;
+        return true;
+    }
 
     static constexpr int kPercentThreshold = 1;  // 1%
 
@@ -265,9 +269,11 @@ bool fs_mgr_rw_access(const std::string& path) {
 
 bool fs_mgr_overlayfs_already_mounted(const std::string& mount_point, bool overlay_only = true) {
     Fstab fstab;
+    auto save_errno = errno;
     if (!ReadFstabFromFile("/proc/mounts", &fstab)) {
         return false;
     }
+    errno = save_errno;
     const auto lowerdir = kLowerdirOption + mount_point;
     for (const auto& entry : fstab) {
         if (overlay_only && "overlay" != entry.fs_type && "overlayfs" != entry.fs_type) continue;
@@ -615,7 +621,9 @@ std::string fs_mgr_overlayfs_scratch_device() {
         if (!dm.GetDmDevicePathByName(partition_name, &path)) {
             // non-DAP A/B device?
             if (fs_mgr_access(super_device)) return "";
-            path = kPhysicalDevice + "system" + (slot_number ? "_a" : "_b");
+            auto other_slot = fs_mgr_get_other_slot_suffix();
+            if (other_slot.empty()) return "";
+            path = kPhysicalDevice + "system" + other_slot;
         }
     }
     return scratch_device_cache = path;
@@ -867,7 +875,8 @@ std::vector<std::string> fs_mgr_overlayfs_required_devices(Fstab* fstab) {
 
 // Returns false if setup not permitted, errno set to last error.
 // If something is altered, set *change.
-bool fs_mgr_overlayfs_setup(const char* backing, const char* mount_point, bool* change) {
+bool fs_mgr_overlayfs_setup(const char* backing, const char* mount_point, bool* change,
+                            bool force) {
     if (change) *change = false;
     auto ret = false;
     if (fs_mgr_overlayfs_valid() == OverlayfsValidResult::kNotSupported) return ret;
@@ -891,7 +900,7 @@ bool fs_mgr_overlayfs_setup(const char* backing, const char* mount_point, bool* 
             continue;
         }
         save_errno = errno;
-        auto verity_enabled = fs_mgr_is_verity_enabled(*it);
+        auto verity_enabled = !force && fs_mgr_is_verity_enabled(*it);
         if (errno == ENOENT || errno == ENXIO) errno = save_errno;
         if (verity_enabled) {
             it = candidates.erase(it);

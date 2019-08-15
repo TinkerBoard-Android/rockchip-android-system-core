@@ -66,6 +66,11 @@ __attribute__((warn_unused_result)) uint32_t ACgroupController_getVersion(const 
         __INTRODUCED_IN(29);
 
 /**
+ * Flag bitmask to be used when ACgroupController_getFlags can be exported
+ */
+#define CGROUPRC_CONTROLLER_FLAG_MOUNTED 0x1
+
+/**
  * Returns the name of the given controller.
  * If the given controller is null, return nullptr.
  */

@@ -61,6 +61,7 @@ FlagList kMountFlagsList[] = {
         {"nodiratime", MS_NODIRATIME},
         {"ro", MS_RDONLY},
         {"rw", 0},
+        {"sync", MS_SYNCHRONOUS},
         {"remount", MS_REMOUNT},
         {"bind", MS_BIND},
         {"rec", MS_REC},
@@ -704,7 +705,9 @@ bool SkipMountingPartitions(Fstab* fstab) {
     constexpr const char kSkipMountConfig[] = "/system/etc/init/config/skip_mount.cfg";
 
     std::string skip_config;
+    auto save_errno = errno;
     if (!ReadFileToString(kSkipMountConfig, &skip_config)) {
+        errno = save_errno;  // missing file is expected
         return true;
     }
 
