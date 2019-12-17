@@ -34,7 +34,7 @@ size_t len = 1024*1024, align = 0;
 int prot = PROT_READ | PROT_WRITE;
 int map_flags = MAP_SHARED;
 int alloc_flags = 0;
-int heap_mask = 1;
+int heap_mask = 2;
 int test = -1;
 size_t stride;
 
@@ -46,7 +46,7 @@ int _ion_alloc_test(int *fd, ion_user_handle_t *handle)
     if (*fd < 0)
         return *fd;
 
-    ret = ion_alloc(*fd, len, align, heap_mask, alloc_flags, handle);
+    ret = ion_alloc_fd(*fd, len, align, heap_mask, alloc_flags, handle);
 
     if (ret)
         printf("%s failed: %s\n", __func__, strerror(ret));
@@ -61,10 +61,12 @@ void ion_alloc_test()
     if(_ion_alloc_test(&fd, &handle))
         return;
 
-    ret = ion_free(fd, handle);
-    if (ret) {
-        printf("%s failed: %s %d\n", __func__, strerror(ret), handle);
-        return;
+    if (ion_is_legacy(fd)) {
+        ret = ion_free(fd, handle);
+        if (ret) {
+            printf("%s failed: %s %d\n", __func__, strerror(ret), handle);
+            return;
+        }
     }
     ion_close(fd);
     printf("ion alloc test: passed\n");
