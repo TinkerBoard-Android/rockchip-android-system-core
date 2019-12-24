@@ -118,8 +118,8 @@ struct charger {
 static const animation BASE_ANIMATION = {
     .text_clock =
         {
-            .pos_x = 0,
-            .pos_y = 0,
+            .pos_x = CENTER_VAL,
+            .pos_y = 100,
 
             .color_r = 255,
             .color_g = 255,
@@ -130,8 +130,8 @@ static const animation BASE_ANIMATION = {
         },
     .text_percent =
         {
-            .pos_x = 0,
-            .pos_y = 0,
+            .pos_x = CENTER_VAL,
+            .pos_y = 100,
 
             .color_r = 255,
             .color_g = 255,
@@ -647,7 +647,9 @@ animation* init_animation() {
     if (battery_animation.fail_file.empty()) {
         battery_animation.fail_file.assign("charger/battery_fail");
     }
-
+    if (battery_animation.text_percent.font_file.empty()) {
+        battery_animation.text_percent.font_file.assign("charger/font");
+    }
     LOGV("Animation Description:\n");
     LOGV("  animation: %d %d '%s' (%d)\n", battery_animation.num_cycles,
          battery_animation.first_frame_repeats, battery_animation.animation_file.c_str(),
