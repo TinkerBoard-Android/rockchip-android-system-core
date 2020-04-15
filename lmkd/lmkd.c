@@ -163,7 +163,7 @@ static bool use_psi_monitors = false;
 static struct psi_threshold psi_thresholds[VMPRESS_LEVEL_COUNT] = {
     { PSI_SOME, 70 },    /* 70ms out of 1sec for partial stall */
     { PSI_SOME, 100 },   /* 100ms out of 1sec for partial stall */
-    { PSI_FULL, 70 },    /* 70ms out of 1sec for complete stall */
+    { PSI_FULL, 700 },    /* 700ms out of 1sec for complete stall */
 };
 
 static android_log_context ctx;
