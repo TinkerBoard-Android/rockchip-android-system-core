@@ -48,6 +48,7 @@
 #define FAKE_BATTERY_TEMPERATURE 424
 #define MILLION 1.0e6
 #define DEFAULT_VBUS_VOLTAGE 5000000
+#define ALWAYS_PLUGGED_CAPACITY 100
 
 using HealthInfo_1_0 = android::hardware::health::V1_0::HealthInfo;
 using HealthInfo_2_0 = android::hardware::health::V2_0::HealthInfo;
@@ -298,6 +299,15 @@ void BatteryMonitor::updateValues(void) {
 
     if (readFromFile(mHealthdConfig->batteryTechnologyPath, &buf) > 0)
         props.batteryTechnology = String8(buf.c_str());
+
+    // For devices which do not have battery and are always plugged
+    // into power souce.
+    if (mAlwaysPluggedDevice) {
+        props.chargerAcOnline = true;
+        props.batteryPresent = true;
+        props.batteryStatus = BatteryStatus::CHARGING;
+        props.batteryHealth = BatteryHealth::GOOD;
+    }
 
     double MaxPower = 0;
 
@@ -689,8 +699,16 @@ void BatteryMonitor::init(struct healthd_config *hc) {
         }
     }
 
+    // This indicates that there is no charger driver registered.
     // Typically the case for devices which do not have a battery and
     // and are always plugged into AC mains.
+    if (!mChargerNames.size()) {
+        KLOG_ERROR(LOG_TAG, "No charger supplies found\n");
+        mBatteryFixedCapacity = ALWAYS_PLUGGED_CAPACITY;
+        mBatteryFixedTemperature = FAKE_BATTERY_TEMPERATURE;
+        mAlwaysPluggedDevice = true;
+    }
+
     if (!mBatteryDevicePresent) {
         KLOG_WARNING(LOG_TAG, "No battery devices found\n");
         hc->periodic_chores_interval_fast = -1;
