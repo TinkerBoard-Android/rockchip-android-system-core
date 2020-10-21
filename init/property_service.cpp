@@ -677,6 +677,19 @@ static void LoadProperties(char* data, const char* filter, const char* filename,
 
             ucred cr = {.pid = 1, .uid = 0, .gid = 0};
             std::string error;
+
+            if (!strncmp(key, "vendor.hwc.device.primary", 25)) {
+                if ((access("/sys/class/drm/card0-DSI-1/status", F_OK) != -1)) {
+                    continue;
+                }
+            }
+
+            if (!strncmp(key, "vendor.hwc.device.extend",  24)) {
+                if ((access("/sys/class/drm/card0-DSI-1/status", F_OK) != -1)) {
+                    continue;
+                }
+            }
+
             if (CheckPermissions(key, value, context, cr, &error) == PROP_SUCCESS) {
                 auto it = properties->find(key);
                 if (it == properties->end()) {
