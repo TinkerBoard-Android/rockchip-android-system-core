@@ -445,6 +445,11 @@ std::string ReadFstabFromDt() {
 // Identify path to fstab file. Lookup is based on pattern fstab.<hardware>,
 // fstab.<hardware.platform> in folders /odm/etc, vendor/etc, or /.
 std::string GetFstabPath() {
+    std::string  boot_mode;
+    if (!fs_mgr_get_boot_config_from_kernel_cmdline("storagemedia", &boot_mode)) {
+        boot_mode = "emmc";
+    }
+
     for (const char* prop : {"hardware", "hardware.platform"}) {
         std::string hw;
 
@@ -452,12 +457,14 @@ std::string GetFstabPath() {
 
         for (const char* prefix : {"/odm/etc/fstab.", "/vendor/etc/fstab.", "/fstab."}) {
             std::string fstab_path = prefix + hw;
+            fstab_path += "." + boot_mode;
             if (access(fstab_path.c_str(), F_OK) == 0) {
+                LINFO << "fstab path by boot mode:" << fstab_path;
                 return fstab_path;
             }
         }
     }
-
+    LINFO << "GetFstabPath: empty fstab";
     return "";
 }
 
