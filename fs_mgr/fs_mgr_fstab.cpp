@@ -743,7 +743,11 @@ bool ReadDefaultFstab(Fstab* fstab) {
     std::string default_fstab_path;
     // Use different fstab paths for normal boot and recovery boot, respectively
     if (access("/system/bin/recovery", F_OK) == 0) {
-        default_fstab_path = "/etc/recovery.fstab";
+        std::string  boot_mode;
+        if (!fs_mgr_get_boot_config_from_kernel_cmdline("storagemedia", &boot_mode)) {
+            boot_mode = "emmc";
+        }
+        default_fstab_path = "/etc/recovery.fstab." + boot_mode;
     } else {  // normal boot
         default_fstab_path = GetFstabPath();
     }
