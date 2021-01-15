@@ -33,7 +33,8 @@ LOCAL_SHARED_LIBRARIES := \
 	libbase \
 	libutils \
 	libcrypto \
-	libkeystore_binder
+	libkeystore_binder \
+	libcutils
 LOCAL_STATIC_LIBRARIES := libscrypt_static
 LOCAL_C_INCLUDES := external/scrypt/lib/crypto
 LOCAL_INIT_RC := gatekeeperd.rc

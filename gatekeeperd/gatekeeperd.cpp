@@ -39,6 +39,8 @@
 #include <hardware/gatekeeper.h>
 #include <hardware/hw_auth_token.h>
 
+#include <cutils/properties.h>
+
 #include "SoftGateKeeperDevice.h"
 #include "IUserManager.h"
 
@@ -50,16 +52,24 @@ static const String16 DUMP_PERMISSION("android.permission.DUMP");
 class GateKeeperProxy : public BnGateKeeperService {
 public:
     GateKeeperProxy() {
-        int ret = hw_get_module_by_class(GATEKEEPER_HARDWARE_MODULE_ID, NULL, &module);
+        char property[PROPERTY_VALUE_MAX];
         device = NULL;
 
-        if (ret < 0) {
-            ALOGW("falling back to software GateKeeper");
+        property_get("ro.boot.mode", property, "sd");
+        if (!strcmp(property, "sd")) {
+            ALOGW("Use software GateKeeper when booting from SD Card without RPMB supported.");
             soft_device.reset(new SoftGateKeeperDevice());
         } else {
-            ret = gatekeeper_open(module, &device);
-            if (ret < 0)
-                LOG_ALWAYS_FATAL_IF(ret < 0, "Unable to open GateKeeper HAL");
+            int ret = hw_get_module_by_class(GATEKEEPER_HARDWARE_MODULE_ID, NULL, &module);
+
+            if (ret < 0) {
+                ALOGW("falling back to software GateKeeper");
+                soft_device.reset(new SoftGateKeeperDevice());
+            } else {
+                ret = gatekeeper_open(module, &device);
+                if (ret < 0)
+                    LOG_ALWAYS_FATAL_IF(ret < 0, "Unable to open GateKeeper HAL");
+            }
         }
 
         if (mark_cold_boot()) {
