@@ -455,7 +455,14 @@ std::string GetFstabPath() {
 
         if (!fs_mgr_get_boot_config(prop, &hw)) continue;
 
-        for (const char* prefix : {"/odm/etc/fstab.", "/vendor/etc/fstab.", "/fstab."}) {
+        for (const char* prefix : {"/fstab."}) { // for ramdisk
+            std::string fstab_path = prefix + hw;
+            if (access(fstab_path.c_str(), F_OK) == 0) {
+                LINFO << "fstab path by boot mode:" << fstab_path;
+                return fstab_path;
+            }
+        }
+        for (const char* prefix : {"/odm/etc/fstab.", "/vendor/etc/fstab."}) {
             std::string fstab_path = prefix + hw;
             fstab_path += "." + boot_mode;
             if (access(fstab_path.c_str(), F_OK) == 0) {
