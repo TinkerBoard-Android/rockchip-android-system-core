@@ -56,6 +56,7 @@ LOCAL_SRC_FILES := \
     switch_root.cpp \
     uevent_listener.cpp \
     util.cpp \
+    vendor.cpp
 
 LOCAL_MODULE := init_first_stage
 LOCAL_MODULE_STEM := init
