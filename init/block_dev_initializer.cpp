@@ -30,10 +30,12 @@ using android::base::Timer;
 using namespace std::chrono_literals;
 
 BlockDevInitializer::BlockDevInitializer() : uevent_listener_(16 * 1024 * 1024) {
-    auto boot_devices = android::fs_mgr::GetBootDevices();
+    boot_device = android::vendor::RKBootMode::getRKBootDevice();
+    std::set<std::string> hook_boot_devices;
+    hook_boot_devices.insert(boot_device);
     device_handler_ = std::make_unique<DeviceHandler>(
             std::vector<Permissions>{}, std::vector<SysfsPermissions>{}, std::vector<Subsystem>{},
-            std::move(boot_devices), false);
+            std::move(hook_boot_devices), false);
 }
 
 bool BlockDevInitializer::InitDeviceMapper() {
@@ -63,6 +65,10 @@ bool BlockDevInitializer::InitDeviceMapper() {
 
 ListenerAction BlockDevInitializer::HandleUevent(const Uevent& uevent,
                                                  std::set<std::string>* devices) {
+    if(uevent.path.find(boot_device) == std::string::npos){
+        return ListenerAction::kContinue;
+    }
+
     // Ignore everything that is not a block device.
     if (uevent.subsystem != "block") {
         return ListenerAction::kContinue;

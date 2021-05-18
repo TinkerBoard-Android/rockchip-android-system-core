@@ -18,6 +18,7 @@
 
 #include "devices.h"
 #include "uevent_listener.h"
+#include "vendor.h"
 
 namespace android {
 namespace init {
@@ -35,6 +36,7 @@ class BlockDevInitializer final {
 
     std::unique_ptr<DeviceHandler> device_handler_;
     UeventListener uevent_listener_;
+    std::string  boot_device;
 };
 
 }  // namespace init

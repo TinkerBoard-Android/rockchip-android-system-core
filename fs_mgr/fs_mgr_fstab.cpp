@@ -406,18 +406,34 @@ std::string ReadFstabFromDt() {
 // fstab.<fstab_suffix>, fstab.<hardware>, fstab.<hardware.platform> in
 // folders /odm/etc, vendor/etc, or /.
 std::string GetFstabPath() {
+    std::string  boot_mode;
+    if (!fs_mgr_get_boot_config_from_kernel_cmdline("storagemedia", &boot_mode)) {
+        boot_mode = "emmc";
+    }
+
     for (const char* prop : {"fstab_suffix", "hardware", "hardware.platform"}) {
         std::string suffix;
 
         if (!fs_mgr_get_boot_config(prop, &suffix)) continue;
 
-        for (const char* prefix : {"/odm/etc/fstab.", "/vendor/etc/fstab.", "/fstab."}) {
+        for (const char* prefix : {"/fstab."}) { // for ramdisk
             std::string fstab_path = prefix + suffix;
             if (access(fstab_path.c_str(), F_OK) == 0) {
+                LINFO << "fstab path by boot mode:" << fstab_path;
+                return fstab_path;
+            }
+        }
+
+        for (const char* prefix : {"/odm/etc/fstab.", "/vendor/etc/fstab.", "/fstab."}) {
+            std::string fstab_path = prefix + suffix;
+            fstab_path += "." + boot_mode;
+            if (access(fstab_path.c_str(), F_OK) == 0) {
+                LINFO << "fstab path by boot mode:" << fstab_path;
                 return fstab_path;
             }
         }
     }
+    LINFO << "GetFstabPath: empty fstab";
 
     return "";
 }
@@ -773,7 +789,11 @@ bool ReadDefaultFstab(Fstab* fstab) {
     std::string default_fstab_path;
     // Use different fstab paths for normal boot and recovery boot, respectively
     if (access("/system/bin/recovery", F_OK) == 0) {
-        default_fstab_path = "/etc/recovery.fstab";
+        std::string boot_mode;
+        if (!fs_mgr_get_boot_config_from_kernel_cmdline("storagemedia", &boot_mode)) {
+            boot_mode = "emmc";
+        }
+        default_fstab_path = "/etc/recovery.fstab." + boot_mode;
     } else {  // normal boot
         default_fstab_path = GetFstabPath();
     }
