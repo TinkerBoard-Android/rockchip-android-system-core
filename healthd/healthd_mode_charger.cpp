@@ -114,8 +114,8 @@ static constexpr const char* animation_desc_path = "/res/values/charger/animatio
 static const animation BASE_ANIMATION = {
     .text_clock =
         {
-            .pos_x = 0,
-            .pos_y = 0,
+            .pos_x = CENTER_VAL,
+            .pos_y = 100,
 
             .color_r = 255,
             .color_g = 255,
@@ -126,8 +126,8 @@ static const animation BASE_ANIMATION = {
         },
     .text_percent =
         {
-            .pos_x = 0,
-            .pos_y = 0,
+            .pos_x = CENTER_VAL,
+            .pos_y = 100,
 
             .color_r = 255,
             .color_g = 255,
@@ -642,7 +642,9 @@ void Charger::InitAnimation() {
     if (batt_anim_.fail_file.empty()) {
         batt_anim_.fail_file.assign("charger/battery_fail");
     }
-
+    if (batt_anim_.text_percent.font_file.empty()) {
+        batt_anim_.text_percent.font_file.assign("charger/font");
+    }
     LOGV("Animation Description:\n");
     LOGV("  animation: %d %d '%s' (%d)\n", batt_anim_.num_cycles, batt_anim_.first_frame_repeats,
          batt_anim_.animation_file.c_str(), batt_anim_.num_frames);
