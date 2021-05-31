@@ -191,7 +191,8 @@ void Charger::InitDefaultAnimationFrames() {
 }
 
 Charger::Charger(const sp<IHealth>& service)
-    : HalHealthLoop("charger", service), batt_anim_(BASE_ANIMATION) {}
+    : HalHealthLoop("charger", service), batt_anim_(BASE_ANIMATION),
+      healthd_draw_(nullptr) {}
 
 Charger::~Charger() {}
 
