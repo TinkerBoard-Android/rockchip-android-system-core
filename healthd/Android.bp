@@ -258,10 +258,19 @@ prebuilt_etc {
     filename: "battery_scale.png",
 }
 
+// /system/etc/res/images/charger/font.png
+prebuilt_etc {
+    name: "system_core_charger_res_images_font.png",
+    src: "images/font.png",
+    relative_install_path: "res/images/charger",
+    filename: "font.png",
+}
+
 phony {
     name: "charger_res_images",
     required: [
         "system_core_charger_res_images_battery_fail.png",
         "system_core_charger_res_images_battery_scale.png",
+	"system_core_charger_res_images_font.png",
     ],
 }
