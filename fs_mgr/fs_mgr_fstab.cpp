@@ -73,6 +73,7 @@ FlagList kMountFlagsList[] = {
         {"slave", MS_SLAVE},
         {"shared", MS_SHARED},
         {"defaults", 0},
+        {"dirsync", MS_DIRSYNC},
 };
 
 off64_t CalculateZramSize(int percentage) {
