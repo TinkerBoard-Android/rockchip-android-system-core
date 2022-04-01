@@ -105,4 +105,17 @@ LOCAL_MODULE_PATH := $(my_gsi_avb_keys_path)
 
 include $(BUILD_PREBUILT)
 
+#######################################
+# t-gsi.avbpubkey
+include $(CLEAR_VARS)
+
+LOCAL_MODULE := t-gsi.avbpubkey
+LOCAL_LICENSE_KINDS := SPDX-license-identifier-Apache-2.0
+LOCAL_LICENSE_CONDITIONS := notice
+LOCAL_MODULE_CLASS := ETC
+LOCAL_SRC_FILES := $(LOCAL_MODULE)
+LOCAL_MODULE_PATH := $(my_gsi_avb_keys_path)
+
+include $(BUILD_PREBUILT)
+
 my_gsi_avb_keys_path :=
