@@ -391,16 +391,17 @@ static bool dump_thread(log_t* log, unwindstack::Unwinder* unwinder, const Threa
 
   std::unique_ptr<GwpAsanCrashData> gwp_asan_crash_data;
   std::unique_ptr<ScudoCrashData> scudo_crash_data;
+  bool init_scudo_crash_data_ret = false;
   if (primary_thread) {
     gwp_asan_crash_data = std::make_unique<GwpAsanCrashData>(unwinder->GetProcessMemory().get(),
                                                              process_info, thread_info);
-    scudo_crash_data =
-        std::make_unique<ScudoCrashData>(unwinder->GetProcessMemory().get(), process_info);
+    scudo_crash_data = std::make_unique<ScudoCrashData>();
+    init_scudo_crash_data_ret = scudo_crash_data->SetErrorInfo(unwinder->GetProcessMemory().get(), process_info);
   }
 
   if (primary_thread && gwp_asan_crash_data->CrashIsMine()) {
     gwp_asan_crash_data->DumpCause(log);
-  } else if (thread_info.siginfo && !(primary_thread && scudo_crash_data->CrashIsMine())) {
+  } else if (thread_info.siginfo && !(primary_thread && init_scudo_crash_data_ret && scudo_crash_data->CrashIsMine())) {
     dump_probable_cause(log, thread_info.siginfo, unwinder->GetMaps(), thread_info.registers.get());
   }
 
