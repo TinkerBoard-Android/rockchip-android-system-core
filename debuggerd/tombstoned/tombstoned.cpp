@@ -501,6 +501,17 @@ static void crash_completed_cb(evutil_socket_t sockfd, short ev, void* arg) {
 
   // If there's something queued up, let them proceed.
   queue->maybe_dequeue_crashes(perform_request);
+
+  //rk patch, trigger bugreport before boot completed, only store 3
+  //bugreport files to avoid storage full.
+  //After system is boot up, use apk to capture tombstone.
+  static int trigger_times = 3;
+  int boot_completed = GetIntProperty("sys.boot_completed", 0);
+  if (boot_completed == 0 && trigger_times > 0) {
+    LOG(INFO) << "tombstoned trigger a bugreport";
+    trigger_times--;
+    android::base::SetProperty("sys.tombstone.triggered", "true");
+  }
 }
 
 int main(int, char* []) {
