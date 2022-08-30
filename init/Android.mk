@@ -62,7 +62,6 @@ LOCAL_SRC_FILES := \
     switch_root.cpp \
     uevent_listener.cpp \
     util.cpp \
-    vendor.cpp
 
 LOCAL_MODULE := init_first_stage
 LOCAL_LICENSE_KINDS := SPDX-license-identifier-Apache-2.0
