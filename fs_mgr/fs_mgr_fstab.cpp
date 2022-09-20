@@ -421,10 +421,20 @@ std::string ReadFstabFromDt() {
 // ramdisk's copy of the fstab had to be located in the root directory, but now
 // the system/etc directory is supported too and is the preferred location.
 std::string GetFstabPath() {
+    std::string  boot_mode;
+    if (!fs_mgr_get_boot_config_from_kernel_cmdline("storagemedia", &boot_mode)) {
+        boot_mode = "emmc";
+    }
+
     for (const char* prop : {"fstab_suffix", "hardware", "hardware.platform"}) {
         std::string suffix;
 
         if (!fs_mgr_get_boot_config(prop, &suffix)) continue;
+
+        std::string  boot_mode;
+        if (!fs_mgr_get_boot_config_from_kernel_cmdline("storagemedia", &boot_mode)) {
+            boot_mode = "emmc";
+        }
 
         for (const char* prefix : {// late-boot/post-boot locations
                                    "/odm/etc/fstab.", "/vendor/etc/fstab.",
@@ -432,12 +442,29 @@ std::string GetFstabPath() {
                                    "/system/etc/fstab.", "/first_stage_ramdisk/system/etc/fstab.",
                                    "/fstab.", "/first_stage_ramdisk/fstab."}) {
             std::string fstab_path = prefix + suffix;
+            fstab_path += "." + boot_mode;
+
             if (access(fstab_path.c_str(), F_OK) == 0) {
+                LINFO << "GetFstabPath by boot mode: " << fstab_path;
+                return fstab_path;
+            }
+        }
+
+        for (const char* prefix : {// late-boot/post-boot locations
+                                   "/odm/etc/fstab.", "/vendor/etc/fstab.",
+                                   // early boot locations
+                                   "/system/etc/fstab.", "/first_stage_ramdisk/system/etc/fstab.",
+                                   "/fstab.", "/first_stage_ramdisk/fstab."}) {
+            std::string fstab_path = prefix + suffix;
+
+            if (access(fstab_path.c_str(), F_OK) == 0) {
+                LINFO << "GetFstabPath by default: " << fstab_path;
                 return fstab_path;
             }
         }
     }
 
+    LINFO << "GetFstabPath: no available fstab files found";
     return "";
 }
 
@@ -833,6 +860,19 @@ bool ReadDefaultFstab(Fstab* fstab) {
     // Use different fstab paths for normal boot and recovery boot, respectively
     if (access("/system/bin/recovery", F_OK) == 0) {
         default_fstab_path = "/etc/recovery.fstab";
+
+        std::string boot_mode;
+        if (!fs_mgr_get_boot_config_from_kernel_cmdline("storagemedia", &boot_mode)) {
+            boot_mode = "emmc";
+        }
+
+        std::string default_fstab_path_by_boot_mode;
+        default_fstab_path_by_boot_mode = "/etc/recovery.fstab." + boot_mode;
+        if (access(default_fstab_path_by_boot_mode.c_str(), F_OK) == 0) {
+                default_fstab_path = default_fstab_path_by_boot_mode;
+            }
+
+        LINFO << "ReadDefaultFstab for recovery boot: " << default_fstab_path;
     } else {  // normal boot
         default_fstab_path = GetFstabPath();
     }
