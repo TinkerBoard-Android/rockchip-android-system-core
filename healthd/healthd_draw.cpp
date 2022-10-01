@@ -205,7 +205,7 @@ void HealthdDraw::draw_clock(const animation* anim) {
     draw_text(field.font, x, y, clock_str);
 }
 
-void HealthdDraw::draw_percent(const animation* anim) {
+void HealthdDraw::draw_percent(const animation* anim, int battery_start) {
     if (!graphics_available) return;
     int cur_level = anim->cur_level;
     if (anim->cur_status == BATTERY_STATUS_FULL) {
@@ -226,20 +226,21 @@ void HealthdDraw::draw_percent(const animation* anim) {
 
     LOGV("drawing percent %s %d %d\n", str.c_str(), x, y);
     gr_color(field.color_r, field.color_g, field.color_b, field.color_a);
-    draw_text(field.font, x, y, str.c_str());
+    draw_text(field.font, x, battery_start + y, str.c_str());
 }
 
 void HealthdDraw::draw_battery(const animation* anim) {
     if (!graphics_available) return;
+    int battery_start = 0;
     const animation::frame& frame = anim->frames[anim->cur_frame];
 
     if (anim->num_frames != 0) {
-        draw_surface_centered(frame.surface);
+        battery_start = draw_surface_centered(frame.surface);
         LOGV("drawing frame #%d min_cap=%d time=%d\n", anim->cur_frame, frame.min_level,
              frame.disp_time);
     }
     draw_clock(anim);
-    draw_percent(anim);
+    draw_percent(anim, battery_start);
 }
 
 void HealthdDraw::draw_unknown(GRSurface* surf_unknown) {

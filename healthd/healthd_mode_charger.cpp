@@ -201,7 +201,7 @@ void Charger::InitDefaultAnimationFrames() {
 }
 
 Charger::Charger(ChargerConfigurationInterface* configuration)
-    : batt_anim_(BASE_ANIMATION), configuration_(configuration) {}
+    : batt_anim_(BASE_ANIMATION), healthd_draw_(nullptr), configuration_(configuration) {}
 
 Charger::~Charger() {}
 
