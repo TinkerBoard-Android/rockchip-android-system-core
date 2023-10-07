@@ -16,5 +16,6 @@ service zygote /system/bin/app_process64 -Xzygote /system/bin --zygote --start-s
     onrestart restart media.tuner
     onrestart restart netd
     onrestart restart wificond
+    onrestart restart vendor.input-default
     task_profiles ProcessCapacityHigh MaxPerformance
     critical window=${zygote.critical_window.minute:-off} target=zygote-fatal
