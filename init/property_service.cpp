@@ -1251,6 +1251,17 @@ static void ProcessKernelCmdline() {
     });
 }
 
+constexpr auto FUSE_PROGRAMMED = "fuse.programmed"sv;
+
+static void ProcessFuseInKernelCmdline() {
+    ImportKernelCmdline([&](const std::string& key, const std::string& value) {
+        if (StartsWith(key, FUSE_PROGRAMMED)) {
+            InitPropertySet("ro.fuse.programmed", value);
+        } else {
+            InitPropertySet("ro.fuse.programmed", "0");
+       }
+    });
+}
 
 static void ProcessBootconfig() {
     ImportBootconfig([&](const std::string& key, const std::string& value) {
@@ -1279,6 +1290,8 @@ void PropertyInit() {
     ProcessKernelDt();
     ProcessKernelCmdline();
     ProcessBootconfig();
+
+    ProcessFuseInKernelCmdline();
 
     // Propagate the kernel variables to internal variables
     // used by init as well as the current required properties.

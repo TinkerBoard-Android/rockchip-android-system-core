@@ -307,6 +307,15 @@ TEST_F(Conformance, GetVarSerialNo) {
     EXPECT_LE(var.size(), FB_RESPONSE_SZ - 4) << "getvar:serialno response is too long";
 }
 
+TEST_F(Conformance, GetVarFuse) {
+    std::string var;
+    EXPECT_EQ(fb->GetVar("fuse-programmed", &var), SUCCESS) << "getvar:fuse-programmed failed";
+    EXPECT_NE(var, "") << "getvar:fuse-programmed response was empty";
+    EXPECT_EQ(std::count_if(var.begin(), var.end(), not_allowed), 0)
+            << "getvar:fuse-programmed contained illegal ASCII chars";
+    EXPECT_LE(var.size(), FB_RESPONSE_SZ - 4) << "getvar:fuse-programmed response was too large";
+}
+
 TEST_F(Conformance, GetVarSecure) {
     std::string var;
     EXPECT_EQ(fb->GetVar("secure", &var), SUCCESS);

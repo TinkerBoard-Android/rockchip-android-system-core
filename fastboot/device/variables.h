@@ -32,6 +32,7 @@ bool GetVndkVersion(FastbootDevice* device, const std::vector<std::string>& args
                     std::string* message);
 bool GetProduct(FastbootDevice* device, const std::vector<std::string>& args, std::string* message);
 bool GetSerial(FastbootDevice* device, const std::vector<std::string>& args, std::string* message);
+bool GetFuse(FastbootDevice* device, const std::vector<std::string>& args, std::string* message);
 bool GetSecure(FastbootDevice* device, const std::vector<std::string>& args, std::string* message);
 bool GetCurrentSlot(FastbootDevice* device, const std::vector<std::string>& args,
                     std::string* message);

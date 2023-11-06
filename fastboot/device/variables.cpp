@@ -92,6 +92,12 @@ bool GetSerial(FastbootDevice* /* device */, const std::vector<std::string>& /* 
     return true;
 }
 
+bool GetFuse(FastbootDevice* /* device */, const std::vector<std::string>& /* args */,
+               std::string* message) {
+    *message = android::base::GetProperty("ro.fuse.programmed", "");
+    return true;
+}
+
 bool GetSecure(FastbootDevice* /* device */, const std::vector<std::string>& /* args */,
                std::string* message) {
     *message = android::base::GetBoolProperty("ro.secure", "") ? "yes" : "no";

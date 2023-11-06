@@ -52,6 +52,7 @@
 #define FB_VAR_VERSION_VNDK "version-vndk"
 #define FB_VAR_PRODUCT "product"
 #define FB_VAR_SERIALNO "serialno"
+#define FB_VAR_FUSE_PROGRAMMED "fuse-programmed"
 #define FB_VAR_SECURE "secure"
 #define FB_VAR_UNLOCKED "unlocked"
 #define FB_VAR_CURRENT_SLOT "current-slot"
