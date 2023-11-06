@@ -121,6 +121,7 @@ bool GetVarHandler(FastbootDevice* device, const std::vector<std::string>& args)
             {FB_VAR_VERSION_VNDK, {GetVndkVersion, nullptr}},
             {FB_VAR_PRODUCT, {GetProduct, nullptr}},
             {FB_VAR_SERIALNO, {GetSerial, nullptr}},
+            {FB_VAR_FUSE_PROGRAMMED, {GetFuse, nullptr}},
             {FB_VAR_VARIANT, {GetVariant, nullptr}},
             {FB_VAR_SECURE, {GetSecure, nullptr}},
             {FB_VAR_UNLOCKED, {GetUnlocked, nullptr}},
