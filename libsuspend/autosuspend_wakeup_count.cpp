@@ -27,6 +27,11 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
+//----rk-code----
+#ifdef RK_EBOOK
+#include <cutils/properties.h>
+#endif
+//---------------
 
 #include <android-base/file.h>
 #include <android-base/logging.h>
@@ -52,6 +57,32 @@ static int sleep_time = BASE_SLEEP_TIME;
 static constexpr char sys_power_state[] = "/sys/power/state";
 static constexpr char sys_power_wakeup_count[] = "/sys/power/wakeup_count";
 static bool autosuspend_is_init = false;
+
+//----rk-code----
+#ifdef RK_EBOOK
+static int memsleep_fd = -1;
+static constexpr char idle_memsleep[] = "lite";
+static constexpr char sys_power_memsleep[] = "/sys/power/mem_sleep";
+static constexpr char ebc_state[] = "/sys/devices/platform/ebc-dev/ebc_state";
+static constexpr char usb_online_state[] = "/sys/class/power_supply/usb/online";
+static constexpr char ac_online_state[] = "/sys/class/power_supply/ac/online";
+static constexpr char bt_state[] = "/sys/class/rfkill/rfkill0/state";
+static constexpr char wifi_state[] = "/sys/class/net/wlan0/carrier";
+static int start_idle;
+static bool autosuspend_enabled;
+
+static int get_poweroff_state(void)
+{
+    char prop[255];
+
+    // 0: normal poweroff 1: lower poweroff  -1: not in poweroff state
+    property_get("sys.power.shutdown", prop, "-1");
+    bool noidle = ((prop[0] == '1') || (prop[0] == '0'));
+
+    return (noidle == 1) ? 1 : 0;
+}
+#endif
+//---------------
 
 static void update_sleep_time(bool success) {
     if (success) {
@@ -92,13 +123,46 @@ static void* suspend_thread_func(void* arg __attribute__((unused))) {
 
         LOG(VERBOSE) << "write " << wakeup_count << " to wakeup_count";
         if (WriteStringToFd(wakeup_count, wakeup_count_fd)) {
+//----rk-code----
+#ifdef RK_EBOOK
+            if (get_poweroff_state()) {
+                LOG(ERROR) << "autosleep thread exit because of system shutdown";
+                break;
+            }
+
+            if (!start_idle) {
+                    LOG(ERROR) << "cancle idle this time, goto wait next enable sleep";
+                    autosuspend_enabled = false;
+                    continue;
+            }
+
+            LOG(ERROR) << "write " << idle_memsleep << " to " << sys_power_memsleep;
+            success = WriteStringToFd(idle_memsleep, memsleep_fd);
+            if (success) {
+                LOG(ERROR) << "last set lite -> mem_sleep success";
+                LOG(ERROR) << "write " << sleep_state << " to " << sys_power_state;
+                success = WriteStringToFd(sleep_state, state_fd);
+                if (success) {
+                    LOG(ERROR) << "last idle success, goto wait next enable sleep";
+                    autosuspend_enabled = false;
+                    continue;
+                }
+                void (*func)(bool success) = wakeup_func;
+                if (func != NULL) {
+                    (*func)(success);
+                }
+            } else {
+                LOG(ERROR) << "last set lite -> mem_sleep failed";
+            }
+#else
             LOG(VERBOSE) << "write " << sleep_state << " to " << sys_power_state;
             success = WriteStringToFd(sleep_state, state_fd);
-
             void (*func)(bool success) = wakeup_func;
             if (func != NULL) {
                 (*func)(success);
             }
+#endif
+//---------------
         } else {
             PLOG(ERROR) << "error writing to " << sys_power_wakeup_count;
         }
@@ -128,6 +192,26 @@ static int init_state_fd(void) {
     return 0;
 }
 
+//----rk-code----
+#ifdef RK_EBOOK
+static int init_memsleep_fd(void) {
+    if (memsleep_fd >= 0) {
+        return 0;
+    }
+
+    int fd = TEMP_FAILURE_RETRY(open(sys_power_memsleep, O_CLOEXEC | O_RDWR));
+    if (fd < 0) {
+        PLOG(ERROR) << "error opening " << sys_power_memsleep;
+        return -1;
+    }
+
+    memsleep_fd = fd;
+    LOG(INFO) << "init_memsleep_fd success";
+    return 0;
+}
+#endif
+//---------------
+
 static int autosuspend_init(void) {
     if (autosuspend_is_init) {
         return 0;
@@ -137,6 +221,15 @@ static int autosuspend_init(void) {
     if (ret < 0) {
         return -1;
     }
+
+//----rk-code----
+#ifdef RK_EBOOK
+    ret = init_memsleep_fd();
+    if (ret < 0) {
+        return -1;
+    }
+#endif
+//---------------
 
     wakeup_count_fd = TEMP_FAILURE_RETRY(open(sys_power_wakeup_count, O_CLOEXEC | O_RDWR));
     if (wakeup_count_fd < 0) {
@@ -177,12 +270,25 @@ static int autosuspend_wakeup_count_enable(void) {
         return ret;
     }
 
+//----rk-code----
+#ifdef RK_EBOOK
+    if (autosuspend_enabled) {
+        return 0;
+    }
+#endif
+//---------------
+
     ret = sem_post(&suspend_lockout);
     if (ret < 0) {
         PLOG(ERROR) << "error changing semaphore";
     }
 
     LOG(VERBOSE) << "autosuspend_wakeup_count_enable done";
+//----rk-code----
+#ifdef RK_EBOOK
+    autosuspend_enabled = true;
+#endif
+//---------------
 
     return ret;
 }
@@ -194,6 +300,14 @@ static int autosuspend_wakeup_count_disable(void) {
         return 0;  // always successful if no thread is running yet
     }
 
+//----rk-code----
+#ifdef RK_EBOOK
+    if (!autosuspend_enabled) {
+        return 0;
+    }
+#endif
+//---------------
+
     int ret = sem_wait(&suspend_lockout);
 
     if (ret < 0) {
@@ -201,6 +315,11 @@ static int autosuspend_wakeup_count_disable(void) {
     }
 
     LOG(VERBOSE) << "autosuspend_wakeup_count_disable done";
+//----rk-code----
+#ifdef RK_EBOOK
+    autosuspend_enabled = false;
+#endif
+//---------------
 
     return ret;
 }
@@ -224,11 +343,139 @@ static void autosuspend_set_wakeup_callback(void (*func)(bool success)) {
     wakeup_func = func;
 }
 
+//----rk-code----
+#ifdef RK_EBOOK
+//idle start-------------------------------------------------------------------------------
+#if 0
+// 1:open 0:close
+static int get_wifi_state(void)
+{
+    char prop[255];
+    bool noidle;
+
+    property_get("sys.wifi.noidle", prop, "0");
+    noidle = (prop[0] == '1');
+
+    return (noidle == 1) ? 1 : 0;
+}
+#else
+// 1:open  0:close
+static int get_wifi_state(void)
+{
+    int ret = 0;
+    char state = 0;
+
+    int fd = open(wifi_state, O_RDONLY);
+    if (fd > 0) {
+        ret = read(fd, &state, 1);
+        if (ret < 0)
+            LOG(ERROR) << "Error reading from " << wifi_state << ":" << strerror(ret);
+        close(fd);
+    }
+
+    return (state == '1') ? 1 : 0;
+}
+#endif
+//---------------
+
+// 1:open  0:close
+static int get_bt_state(void)
+{
+    int ret = 0;
+    char state = 0;
+
+    int fd = open(bt_state, O_RDONLY);
+    if (fd > 0) {
+        ret = read(fd, &state, 1);
+        if (ret < 0)
+            LOG(ERROR) << "Error reading from " << bt_state << ":" << strerror(ret);
+        close(fd);
+    }
+
+    return (state == '1') ? 1 : 0;
+}
+
+// 1:idle 0:busy
+static int get_ebc_state(void)
+{
+    int ret = 0;
+    char state = '0';
+
+    int fd = open(ebc_state, O_RDONLY);
+    if (fd > 0) {
+        ret = read(fd, &state, 1);
+        if (ret < 0)
+            LOG(ERROR) << "Error reading from " << ebc_state << ":" << strerror(ret);
+        close(fd);
+    }
+
+    return (state == '1') ? 1 : 0;
+}
+
+// 1: power online  0: power offline
+static int get_charge_state(void)
+{
+    char buf = 0;
+    char buf1 = 0;
+    int ret;
+
+    int fd = open(usb_online_state, O_RDONLY);
+    if (fd > 0) {
+        ret = read(fd, &buf, 1);
+        if (ret < 0)
+            LOG(ERROR) << "Error reading from " << usb_online_state << ":" << strerror(ret);
+        close(fd);
+    }
+
+    int fd1 = open(ac_online_state, O_RDONLY);
+    if (fd1 > 0) {
+        ret = read(fd1, &buf1, 1);
+        if (ret < 0)
+            LOG(ERROR) << "Error reading from " << ac_online_state << ":" << strerror(ret);
+        close(fd1);
+    }
+
+    return (buf == '1' || buf1 == '1');
+}
+
+static int autosuspend_wakeup_count_idle(int screen_on)
+{
+    char buf[80];
+    int ret;
+    int ebc_state, charge_state, wifi_state, bt_state, poweroff_state;
+
+    ret = init_state_fd();
+    if (ret < 0) {
+        return ret;
+    }
+
+    start_idle =  screen_on;
+
+    return 0;
+}
+
+static int autosuspend_wakeup_count_wake(void)
+{
+    //cancle idle
+    start_idle = 0;
+    LOG(ERROR) << "cancle this idle";
+
+    return 0;
+}
+//idle end-------------------------------------------------------------------------------------------------------------------
+#endif
+
 struct autosuspend_ops autosuspend_wakeup_count_ops = {
     .enable = autosuspend_wakeup_count_enable,
     .disable = autosuspend_wakeup_count_disable,
     .force_suspend = force_suspend,
     .set_wakeup_callback = autosuspend_set_wakeup_callback,
+//----rk-code----
+#ifdef RK_EBOOK
+    .idle = autosuspend_wakeup_count_idle,
+    .wake = autosuspend_wakeup_count_wake,
+#endif
+//---------------
 };
 
 struct autosuspend_ops* autosuspend_wakeup_count_init(void) {

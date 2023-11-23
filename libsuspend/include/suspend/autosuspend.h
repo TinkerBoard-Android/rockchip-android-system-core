@@ -63,6 +63,12 @@ int autosuspend_force_suspend(int timeout_ms);
  * aborted due to some reason.
  */
 void autosuspend_set_wakeup_callback(void (*func)(bool success));
+//----rk-code----
+#ifdef RK_EBOOK
+int autosuspend_idle(int screen_on);
+int autosuspend_wake(void);
+#endif
+//---------------
 
 __END_DECLS
 

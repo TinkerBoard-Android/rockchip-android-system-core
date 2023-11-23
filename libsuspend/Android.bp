@@ -4,6 +4,28 @@ package {
     default_applicable_licenses: ["Android-Apache-2.0"],
 }
 
+//----rk-code----
+soong_config_module_type {
+    name: "rk_ebook_soong_cc_defaults",
+    module_type: "cc_defaults",
+    config_namespace: "rk_ebook",
+    bool_variables: ["rk_ebook_en"],
+    properties: ["cflags"],
+}
+
+rk_ebook_soong_cc_defaults {
+    name: "rk_ebook_cc_defaults",
+
+    soong_config_variables: {
+        rk_ebook_en: {
+            cflags: [
+                "-DRK_EBOOK",
+            ],
+        },
+    },
+}
+//---------------
+
 cc_library {
     name: "libsuspend",
     vendor_available: true,
@@ -22,4 +44,9 @@ cc_library {
         "-Werror",
         // "-DLOG_NDEBUG=0",
     ],
+    //----rk-code----
+    defaults: [
+        "rk_ebook_cc_defaults"
+    ],
+    //---------------
 }

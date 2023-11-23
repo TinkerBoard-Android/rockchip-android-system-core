@@ -20,6 +20,12 @@
 struct autosuspend_ops {
     int (*enable)(void);
     int (*disable)(void);
+//----rk-code----
+#ifdef RK_EBOOK
+    int (*idle)(int screen_on);
+    int (*wake)(void);
+#endif
+//---------------
     int (*force_suspend)(int timeout_ms);
     void (*set_wakeup_callback)(void (*func)(bool success));
 };

@@ -52,9 +52,13 @@ int autosuspend_enable(void) {
 
     ALOGV("autosuspend_enable");
 
+//----rk-code----
+#ifndef RK_EBOOK
     if (autosuspend_enabled) {
         return 0;
     }
+#endif
+//---------------
 
     ret = autosuspend_ops->enable();
     if (ret) {
@@ -113,3 +117,40 @@ void autosuspend_set_wakeup_callback(void (*func)(bool success)) {
 
     autosuspend_ops->set_wakeup_callback(func);
 }
+
+#ifdef RK_EBOOK
+int autosuspend_idle(int on)
+{
+    int ret;
+
+    ret = autosuspend_init();
+    if (ret) {
+        return ret;
+    }
+
+    ALOGE("autosuspend_idle screen_on %d", on);
+    autosuspend_ops->idle(on);
+
+    if (on)
+        autosuspend_enable();
+
+    return 0;
+}
+
+int autosuspend_wake(void)
+{
+    int ret;
+
+    ret = autosuspend_init();
+    if (ret) {
+        return ret;
+    }
+
+    ret = autosuspend_ops->wake();
+    if (ret) {
+        return ret;
+    }
+
+    return 0;
+}
+#endif
