@@ -84,6 +84,7 @@ init_device_sources = [
     "uevent_listener.cpp",
     "ueventd.cpp",
     "ueventd_parser.cpp",
+    "vendor.cpp",
 ]
 init_host_sources = [
     "check_builtins.cpp",
@@ -344,6 +345,7 @@ cc_binary {
         "switch_root.cpp",
         "uevent_listener.cpp",
         "util.cpp",
+        "vendor.cpp",
     ],
 
     static_libs: [
