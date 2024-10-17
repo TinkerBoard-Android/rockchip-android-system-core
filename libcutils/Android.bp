@@ -164,7 +164,13 @@ cc_library {
         "strlcpy.c",
         "threads.cpp",
     ],
-
+    product_variables: {
+        debuggable: {
+            cppflags: [
+                "-DLIBCUTILS_USERDEBUG_OR_ENG",
+            ],
+        },
+    },
     target: {
         linux_bionic: {
             enabled: true,
